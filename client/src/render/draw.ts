@@ -369,21 +369,61 @@ export interface PersonDraw {
   bubble?: { text: string } | null;
 }
 
-export function drawPerson(ctx: Ctx, ent: PersonDraw, sx: number, sy: number, you: boolean) {
-  shadow(ctx, sx, sy, 18, 8);
-  const land = vType(ent.equipped) === "land";
-  vehBadge(ctx, sx + (land ? 0 : 14), sy + (land ? 6 : 0), ent.equipped);
+export function drawPerson(ctx: Ctx, ent: PersonDraw, sx: number, sy: number, you: boolean, bare = false) {
+  if (!bare) {
+    shadow(ctx, sx, sy, 18, 8);
+    const land = vType(ent.equipped) === "land";
+    vehBadge(ctx, sx + (land ? 0 : 14), sy + (land ? 6 : 0), ent.equipped);
+  }
   const look = ent.look ? lookById(ent.look) : undefined;
   const body = look?.body ?? (you ? "#15323b" : "#5a6e74");
+  const skin = look?.skin ?? "#f0c9a0";
+  const hair = look?.hair ?? "#3a2a1a";
+  const style = look?.hairStyle ?? "short";
+
+  // body / clothes
   ctx.fillStyle = body;
   ctx.beginPath();
   ctx.roundRect(sx - 5, sy - 20, 10, 16, 4);
   ctx.fill();
-  ctx.fillStyle = "#f0c9a0";
+
+  // long hair falls behind the shoulders
+  if (style === "long") {
+    ctx.fillStyle = hair;
+    ctx.beginPath();
+    ctx.roundRect(sx - 6.5, sy - 26, 3, 12, 1.5);
+    ctx.roundRect(sx + 3.5, sy - 26, 3, 12, 1.5);
+    ctx.fill();
+  }
+
+  // head
+  ctx.fillStyle = skin;
   ctx.beginPath();
   ctx.arc(sx, sy - 24, 5, 0, 7);
   ctx.fill();
-  // hat (optional, per look)
+
+  // hair on top (cap over the upper hemisphere)
+  if (style !== "bald") {
+    ctx.fillStyle = hair;
+    ctx.beginPath();
+    ctx.arc(sx, sy - 24, 5.4, Math.PI, Math.PI * 2);
+    ctx.closePath();
+    ctx.fill();
+    if (style === "bun") {
+      ctx.beginPath();
+      ctx.arc(sx, sy - 30.5, 2.4, 0, 7);
+      ctx.fill();
+    }
+  }
+
+  // face — eyes (so characters read as people, not blobs)
+  ctx.fillStyle = "#2a1a12";
+  ctx.beginPath();
+  ctx.arc(sx - 1.9, sy - 23, 0.95, 0, 7);
+  ctx.arc(sx + 1.9, sy - 23, 0.95, 0, 7);
+  ctx.fill();
+
+  // hat (optional, per look) — drawn over the hair
   if (look?.hat) {
     ctx.fillStyle = look.hat;
     ctx.beginPath();
@@ -393,6 +433,9 @@ export function drawPerson(ctx: Ctx, ent: PersonDraw, sx: number, sy: number, yo
     ctx.roundRect(sx - 4.5, sy - 32, 9, 6, 2); // crown
     ctx.fill();
   }
+
+  if (bare) return;
+
   ctx.font = "600 10px Inter";
   ctx.textAlign = "center";
   const w = ctx.measureText(ent.name).width + 12;

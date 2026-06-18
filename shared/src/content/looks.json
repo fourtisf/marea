@@ -1,10 +1,14 @@
 [
-  {"id":"skipper","name":"Skipper","body":"#2b4d63","hat":"#15323b"},
-  {"id":"sailor","name":"Sailor","body":"#e8e2d2","hat":null},
-  {"id":"captain","name":"Captain","body":"#c9a24a","hat":"#15323b"},
-  {"id":"diver","name":"Diver","body":"#1fa4bd","hat":null},
-  {"id":"local","name":"Local","body":"#b23a2e","hat":null},
-  {"id":"tourist","name":"Tourist","body":"#3f8a4a","hat":"#f4ecdb"},
-  {"id":"merchant","name":"Merchant","body":"#7a4ea3","hat":"#e7c46b"},
-  {"id":"regular","name":"Regular","body":"#5a6e74","hat":null}
+  {"id":"skipper","name":"Skipper","body":"#2b4d63","skin":"#e8b88f","hair":"#3a2a1a","hairStyle":"short","hat":"#15323b"},
+  {"id":"sailor","name":"Deckhand","body":"#e8e2d2","skin":"#f4d8b8","hair":"#6a4324","hairStyle":"long","hat":null},
+  {"id":"captain","name":"Captain","body":"#c9a24a","skin":"#b97a4e","hair":"#141414","hairStyle":"short","hat":"#15323b"},
+  {"id":"diver","name":"Diver","body":"#1fa4bd","skin":"#7a4a2b","hair":"#0d0d0d","hairStyle":"bun","hat":null},
+  {"id":"local","name":"Local","body":"#b23a2e","skin":"#e0a878","hair":"#2a1c10","hairStyle":"short","hat":null},
+  {"id":"tourist","name":"Tourist","body":"#3f8a4a","skin":"#f7d9b8","hair":"#caa24a","hairStyle":"long","hat":"#f4ecdb"},
+  {"id":"merchant","name":"Merchant","body":"#7a4ea3","skin":"#8a5a36","hair":"#15110a","hairStyle":"bald","hat":"#e7c46b"},
+  {"id":"regular","name":"Resident","body":"#5a6e74","skin":"#caa07a","hair":"#3a2418","hairStyle":"bun","hat":null},
+  {"id":"mariner","name":"Mariner","body":"#15323b","skin":"#5a3420","hair":"#0a0a0a","hairStyle":"short","hat":null},
+  {"id":"hostess","name":"Hostess","body":"#d98aa0","skin":"#f4d8b8","hair":"#1a1a1a","hairStyle":"long","hat":null},
+  {"id":"fisher","name":"Fisher","body":"#46708a","skin":"#9c6b43","hair":"#241810","hairStyle":"short","hat":"#b23a2e"},
+  {"id":"heiress","name":"Heiress","body":"#e7c46b","skin":"#f0c9a0","hair":"#e8e2d2","hairStyle":"bun","hat":null}
 ]

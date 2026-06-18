@@ -114,13 +114,12 @@
     background:linear-gradient(135deg,var(--gold-bright),var(--gold));padding:13px 30px;border-radius:999px;border:1px solid #a9842f;box-shadow:0 12px 30px rgba(120,80,20,.3)}
   .intro .go:disabled{opacity:.55;cursor:wait}
   .intro .pick-label{margin-top:18px;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-soft)}
-  .picker{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-width:300px;margin-top:8px}
-  .swatch-look{width:40px;height:44px;border-radius:10px;border:2px solid transparent;background:var(--panel);cursor:pointer;
-    display:flex;align-items:flex-end;justify-content:center;padding-bottom:5px;box-shadow:0 4px 12px rgba(120,80,20,.16);transition:transform .08s}
+  .picker{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-width:340px;margin-top:8px}
+  .swatch-look{width:46px;height:54px;border-radius:10px;border:2px solid transparent;background:var(--panel);cursor:pointer;
+    display:flex;align-items:center;justify-content:center;padding:0;overflow:hidden;box-shadow:0 4px 12px rgba(120,80,20,.16);transition:transform .08s}
   .swatch-look:hover{transform:translateY(-2px)}
   .swatch-look.sel{border-color:var(--gold)}
-  .swatch-look .fig{width:13px;height:20px;border-radius:5px 5px 3px 3px;position:relative}
-  .swatch-look .fig::before{content:"";position:absolute;left:50%;top:-7px;transform:translateX(-50%);width:9px;height:9px;border-radius:50%;background:#f0c9a0}
+  .swatch-look canvas{display:block}
   .intro .demo{margin-top:14px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);opacity:.8}
   .intro .err{margin-top:12px;font-size:12px;color:#b04a3a;min-height:16px}
   .intro.hide{opacity:0;pointer-events:none;transition:opacity .5s}

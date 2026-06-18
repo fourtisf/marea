@@ -71,10 +71,14 @@ export interface MareaMap {
   ambientBoats: AmbientBoat[];
 }
 
+export type HairStyle = "short" | "long" | "bun" | "bald";
 export interface Look {
   id: string;
   name: string;
   body: string; // body/clothing color
+  skin: string; // face/skin tone
+  hair: string; // hair color
+  hairStyle: HairStyle; // short/bald read masc, long/bun read fem
   hat: string | null; // hat color, or null for none
 }
 
