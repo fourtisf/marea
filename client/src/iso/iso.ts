@@ -1,15 +1,18 @@
-// Isometric projection — CLIENT ONLY. The server never imports this.
-import { TILE_W, TILE_H } from "@marea/shared";
+// Top-down (2D) projection — CLIENT ONLY. The server stays projection-blind and
+// works purely in cartesian grid coordinates; this only affects rendering.
+export const TILE_PX = 30; // pixels per tile (square), client render only
 
 export interface ScreenPoint { x: number; y: number }
 export interface Tile { x: number; y: number }
 
-export const cartToIso = (cx: number, cy: number): ScreenPoint => ({
-  x: (cx - cy) * (TILE_W / 2),
-  y: (cx + cy) * (TILE_H / 2),
+// Center of a tile in world pixels.
+export const cartToWorld = (cx: number, cy: number): ScreenPoint => ({
+  x: (cx + 0.5) * TILE_PX,
+  y: (cy + 0.5) * TILE_PX,
 });
 
-// Inverse projection given the current camera + zoom and viewport center.
+// Inverse: world/screen point -> tile, given camera (world px at viewport center),
+// zoom, and viewport size.
 export function screenToTile(
   px: number,
   py: number,
@@ -20,7 +23,5 @@ export function screenToTile(
 ): Tile {
   const wx = (px - cssW / 2) / zoom + cam.x;
   const wy = (py - cssH / 2) / zoom + cam.y;
-  const ax = wx / (TILE_W / 2);
-  const ay = wy / (TILE_H / 2);
-  return { x: Math.round((ax + ay) / 2), y: Math.round((ay - ax) / 2) };
+  return { x: Math.floor(wx / TILE_PX), y: Math.floor(wy / TILE_PX) };
 }

@@ -6,14 +6,11 @@ import {
   STARTING_CREDITS,
   STARTING_LOOK,
   LOOKS,
-  TILE_W,
-  TILE_H,
   type StationKind,
 } from "@marea/shared";
-import { cartToIso, screenToTile, type ScreenPoint, type Tile } from "../iso/iso";
+import { cartToWorld, screenToTile, TILE_PX, type ScreenPoint, type Tile } from "../iso/iso";
 import { walkable, propAt, berthAt, pathTo, inBounds } from "../world";
 import {
-  diamond,
   quayTile,
   waterTile,
   drawVilla,
@@ -29,8 +26,8 @@ import {
   drawPerson,
 } from "../render/draw";
 
-const ZMIN = 0.4;
-const ZMAX = 2.0;
+const ZMIN = 0.28; // zoom out far enough to see (nearly) the whole map
+const ZMAX = 2.2;
 
 export interface LocalPlayer {
   name: string;
@@ -123,7 +120,7 @@ export class HarborScene extends Phaser.Scene {
   create(): void {
     const renderer = this.game.renderer as Phaser.Renderer.Canvas.CanvasRenderer;
     this.ctx = renderer.gameContext;
-    const sp = cartToIso(MAP.spawn.x, MAP.spawn.y);
+    const sp = cartToWorld(MAP.spawn.x, MAP.spawn.y);
     this.cam.x = sp.x;
     this.cam.y = sp.y;
 
@@ -304,13 +301,10 @@ export class HarborScene extends Phaser.Scene {
   steer(screenDx: number, screenDy: number): void {
     if (this.player.job) return;
     const reach = 6;
-    const ax = screenDx / (TILE_W / 2);
-    const ay = screenDy / (TILE_H / 2);
-    const gx = (ax + ay) / 2;
-    const gy = (ay - ax) / 2;
-    const len = Math.hypot(gx, gy) || 1;
-    const tx = Math.round(this.player.tile.x + (gx / len) * reach);
-    const ty = Math.round(this.player.tile.y + (gy / len) * reach);
+    // top-down: screen direction maps straight to grid direction
+    const len = Math.hypot(screenDx, screenDy) || 1;
+    const tx = Math.round(this.player.tile.x + (screenDx / len) * reach);
+    const ty = Math.round(this.player.tile.y + (screenDy / len) * reach);
     this.travelTo(tx, ty, false);
   }
 
@@ -406,7 +400,7 @@ export class HarborScene extends Phaser.Scene {
       if (this.marker.t > 1.1) this.marker = null;
     }
 
-    const pw = cartToIso(this.player.pos.x, this.player.pos.y);
+    const pw = cartToWorld(this.player.pos.x, this.player.pos.y);
     this.cam.x += (pw.x - this.cam.x) * Math.min(1, dt * 6);
     this.cam.y += (pw.y - this.cam.y) * Math.min(1, dt * 6);
     if (Math.abs(this.zoom - this.zoomTarget) > 0.001) {
@@ -414,65 +408,72 @@ export class HarborScene extends Phaser.Scene {
     }
   }
 
-  // ---- rendering (post-render, faithful to the prototype) ----
+  // ---- rendering (top-down 2D) ----
   private draw(): void {
     const ctx = this.ctx;
     const W = this.cssW,
       H = this.cssH;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+    // open sea fills everything beyond the map (no empty void when zoomed out)
+    ctx.fillStyle = "#1c8aa0";
+    ctx.fillRect(0, 0, W, H);
+
     ctx.save();
     ctx.translate(W / 2, H / 2);
     ctx.scale(this.zoom, this.zoom);
     ctx.translate(-this.cam.x, -this.cam.y);
 
+    const T = TILE_PX;
     const hw = W / 2 / this.zoom,
       hh = H / 2 / this.zoom;
-    const wl = this.cam.x - hw - 64,
-      wr = this.cam.x + hw + 64;
-    const wt = this.cam.y - hh - 160,
-      wb = this.cam.y + hh + 32 + 10;
-    const vis = (x: number, y: number) => x >= wl && x <= wr && y >= wt && y <= wb;
-    const G = MAP.grid;
+    // visible tile range (cull)
+    const cx0 = Math.max(0, Math.floor((this.cam.x - hw) / T) - 1);
+    const cx1 = Math.min(MAP.grid - 1, Math.ceil((this.cam.x + hw) / T) + 1);
+    const cy0 = Math.max(0, Math.floor((this.cam.y - hh) / T) - 1);
+    const cy1 = Math.min(MAP.grid - 1, Math.ceil((this.cam.y + hh) / T) + 1);
+    const vis = (wx: number, wy: number) =>
+      wx >= this.cam.x - hw - T && wx <= this.cam.x + hw + T && wy >= this.cam.y - hh - T && wy <= this.cam.y + hh + T;
 
-    // ground tiles, back-to-front by cx+cy
-    for (let s = 0; s <= 2 * (G - 1); s++) {
-      for (let cy = 0; cy < G; cy++) {
-        const cx = s - cy;
-        if (cx < 0 || cx >= G) continue;
-        const w = cartToIso(cx, cy);
-        if (!vis(w.x, w.y)) continue;
-        if (MAP.tiles[cy][cx] === "water") waterTile(ctx, cx, cy, w.x, w.y, this.tsec);
-        else quayTile(ctx, cx, cy, w.x, w.y);
+    // ground tiles
+    for (let cy = cy0; cy <= cy1; cy++) {
+      for (let cx = cx0; cx <= cx1; cx++) {
+        const ox = cx * T,
+          oy = cy * T;
+        if (MAP.tiles[cy][cx] === "water") waterTile(ctx, cx, cy, ox, oy, this.tsec);
+        else quayTile(ctx, cx, cy, ox, oy);
       }
     }
 
     if (this.hover && walkable(this.hover.x, this.hover.y)) {
-      const w = cartToIso(this.hover.x, this.hover.y);
-      if (vis(w.x, w.y)) diamond(ctx, w.x, w.y - 1, "rgba(255,255,255,.22)", "rgba(255,255,255,.6)");
+      ctx.fillStyle = "rgba(255,255,255,.18)";
+      ctx.strokeStyle = "rgba(255,255,255,.6)";
+      ctx.lineWidth = 1.5;
+      ctx.fillRect(this.hover.x * T, this.hover.y * T, T, T);
+      ctx.strokeRect(this.hover.x * T + 0.5, this.hover.y * T + 0.5, T, T);
     }
     if (this.marker) {
-      const w = cartToIso(this.marker.x, this.marker.y);
-      const r = 8 + Math.sin(this.marker.t * 8) * 2;
+      const w = cartToWorld(this.marker.x, this.marker.y);
+      const r = 10 + Math.sin(this.marker.t * 8) * 2;
       ctx.strokeStyle = "rgba(231,196,107,.95)";
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 2.5;
       ctx.beginPath();
-      ctx.ellipse(w.x, w.y, r, r / 2, 0, 0, 7);
+      ctx.arc(w.x, w.y, r, 0, 7);
       ctx.stroke();
     }
 
-    // depth-sorted objects
+    // depth-sorted objects (by world y so lower things draw on top)
     const objs: { d: number; fn: () => void }[] = [];
     for (const p of MAP.props) {
-      const w = cartToIso(p.x, p.y);
+      const w = cartToWorld(p.x, p.y);
       if (!vis(w.x, w.y)) continue;
-      const d = p.x + p.y + (p.kind === "villa" ? -0.1 : p.kind === "palm" ? 0.05 : 0);
       objs.push({
-        d,
+        d: p.y,
         fn: () => {
           switch (p.kind) {
             case "villa": {
               const owner = this.estate.villaOwners.get(p.x + "," + p.y) ?? this.localVillaOwner(p.x, p.y);
-              drawVilla(ctx, { h: p.h, roof: p.roof, forSale: p.forSale && !owner, owner }, w.x, w.y);
+              drawVilla(ctx, { roof: p.roof, forSale: p.forSale && !owner, owner }, w.x, w.y);
               break;
             }
             case "palm": drawPalm(ctx, w.x, w.y); break;
@@ -488,51 +489,40 @@ export class HarborScene extends Phaser.Scene {
       });
     }
     for (const b of MAP.ambientBoats) {
-      const w = cartToIso(b.x, b.y);
+      const w = cartToWorld(b.x, b.y);
       if (!vis(w.x, w.y)) continue;
-      objs.push({ d: b.x + b.y, fn: () => drawBoatParked(ctx, w.x, w.y, b.tier, b.ph, this.tsec) });
+      objs.push({ d: b.y - 0.1, fn: () => drawBoatParked(ctx, w.x, w.y, b.tier, b.ph, this.tsec) });
     }
-    // local player's parked boat at first owned berth
     if (this.player.berths.length) {
       const bb = MAP.berths.find((b) => b.id === this.player.berths[0]);
       if (bb) {
-        const w = cartToIso(bb.x, bb.y);
+        const w = cartToWorld(bb.x, bb.y);
         if (vis(w.x, w.y))
-          objs.push({
-            d: bb.x + bb.y,
-            fn: () => {
-              const tier = this.player.equipped; // boats only look right; runabout fallback
-              drawBoatParked(ctx, w.x, w.y, tier, 1.2, this.tsec);
-              ctx.font = "600 9px Inter";
-              ctx.textAlign = "center";
-              ctx.fillStyle = "#15323b";
-              ctx.fillText(this.player.name, w.x, w.y - 20);
-            },
-          });
+          objs.push({ d: bb.y - 0.1, fn: () => drawBoatParked(ctx, w.x, w.y, this.player.equipped, 1.2, this.tsec) });
       }
     }
     for (const r of this.remotePlayers.values()) {
-      const w = cartToIso(r.pos.x, r.pos.y);
+      const w = cartToWorld(r.pos.x, r.pos.y);
       if (!vis(w.x, w.y)) continue;
-      objs.push({ d: r.pos.x + r.pos.y, fn: () => drawPerson(ctx, r, w.x, w.y, false) });
+      objs.push({ d: r.pos.y, fn: () => drawPerson(ctx, r, w.x, w.y, false) });
     }
     for (const n of this.npcs) {
-      const w = cartToIso(n.pos.x, n.pos.y);
+      const w = cartToWorld(n.pos.x, n.pos.y);
       if (!vis(w.x, w.y)) continue;
-      objs.push({ d: n.pos.x + n.pos.y, fn: () => drawPerson(ctx, n, w.x, w.y, false) });
+      objs.push({ d: n.pos.y, fn: () => drawPerson(ctx, n, w.x, w.y, false) });
     }
     {
-      const w = cartToIso(this.player.pos.x, this.player.pos.y);
+      const w = cartToWorld(this.player.pos.x, this.player.pos.y);
       objs.push({
-        d: this.player.pos.x + this.player.pos.y + 0.05,
+        d: this.player.pos.y + 0.05,
         fn: () => {
           drawPerson(ctx, this.player, w.x, w.y, true);
           if (this.player.job) {
             const f = this.player.job.t / this.player.job.dur;
             ctx.fillStyle = "rgba(0,0,0,.25)";
-            ctx.fillRect(w.x - 18, w.y - 54, 36, 5);
+            ctx.fillRect(w.x - 18, w.y - 26, 36, 5);
             ctx.fillStyle = "#46c7da";
-            ctx.fillRect(w.x - 18, w.y - 54, 36 * f, 5);
+            ctx.fillRect(w.x - 18, w.y - 26, 36 * f, 5);
           }
         },
       });
