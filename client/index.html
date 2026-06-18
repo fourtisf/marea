@@ -117,6 +117,16 @@
   .intro .err{margin-top:12px;font-size:12px;color:#b04a3a;min-height:16px}
   .intro.hide{opacity:0;pointer-events:none;transition:opacity .5s}
   .hint{position:absolute;left:18px;top:62px;z-index:5;font-size:11px;color:var(--ink-soft);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:7px 11px;max-width:210px;line-height:1.5}
+
+  /* on-screen joystick */
+  .joy-base{position:absolute;right:24px;bottom:150px;width:128px;height:128px;border-radius:50%;z-index:6;
+    background:rgba(255,251,241,.45);border:1px solid var(--line);box-shadow:0 8px 22px rgba(120,80,20,.22);
+    backdrop-filter:blur(4px);touch-action:none;cursor:grab}
+  .joy-base.active{cursor:grabbing;background:rgba(255,251,241,.6)}
+  .joy-knob{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;
+    background:linear-gradient(135deg,var(--gold-bright),var(--gold));border:1px solid #a9842f;
+    box-shadow:0 4px 14px rgba(120,80,20,.4),inset 0 1px 2px rgba(255,255,255,.6);transition:transform .04s ease-out}
+  @media (max-width:560px){.joy-base{right:18px;bottom:120px;width:116px;height:116px}}
 </style>
 </head>
 <body>

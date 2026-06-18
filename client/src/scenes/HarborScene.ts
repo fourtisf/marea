@@ -4,6 +4,8 @@ import {
   MOVE_TILES_PER_SEC,
   STARTING_VEHICLE,
   STARTING_CREDITS,
+  TILE_W,
+  TILE_H,
   type StationKind,
 } from "@marea/shared";
 import { cartToIso, screenToTile, type ScreenPoint, type Tile } from "../iso/iso";
@@ -198,20 +200,40 @@ export class HarborScene extends Phaser.Scene {
     this.zoomTarget = Math.max(ZMIN, Math.min(ZMAX, this.zoomTarget * factor));
   }
 
-  // Walk toward a tile. Sends intent to the server when networked, and always
-  // computes a local path for instant feel + the destination marker.
+  // Walk toward a tile. The server is the authority on reachability, so in
+  // networked mode we ALWAYS send the intent (and let the server resolve the
+  // path / approach). The local path is only used for instant feel offline and
+  // for the destination marker.
   travelTo(tx: number, ty: number, setMarker: boolean): void {
     if (this.player.job) return;
+    if (!inBounds(tx, ty)) return;
     const p = pathTo(this.player.tile.x, this.player.tile.y, tx, ty);
-    if (!p) return;
-    // In networked mode the server owns movement; locally we only show the
-    // destination marker and send intent. Otherwise we step locally (Phase 0).
-    if (!this.networked) this.player.path = p;
-    if (setMarker && p.length) {
+    if (!this.networked) {
+      if (!p) return;
+      this.player.path = p;
+    }
+    if (setMarker && p && p.length) {
       const end = p[p.length - 1];
       this.marker = { x: end.x, y: end.y, t: 0 };
+    } else if (setMarker) {
+      this.marker = { x: tx, y: ty, t: 0 };
     }
     if (this.onTravelIntent) this.onTravelIntent({ x: tx, y: ty });
+  }
+
+  // Analog steering from the on-screen joystick. Converts a normalized
+  // screen-space direction into a grid target a few tiles ahead and walks there.
+  steer(screenDx: number, screenDy: number): void {
+    if (this.player.job) return;
+    const reach = 6;
+    const ax = screenDx / (TILE_W / 2);
+    const ay = screenDy / (TILE_H / 2);
+    const gx = (ax + ay) / 2;
+    const gy = (ay - ax) / 2;
+    const len = Math.hypot(gx, gy) || 1;
+    const tx = Math.round(this.player.tile.x + (gx / len) * reach);
+    const ty = Math.round(this.player.tile.y + (gy / len) * reach);
+    this.travelTo(tx, ty, false);
   }
 
   // ---- net-driven mutators (called by the room sync) ----

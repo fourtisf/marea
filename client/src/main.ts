@@ -8,6 +8,7 @@ import { setupChat } from "./ui/chat";
 import { setupLeaderboard } from "./ui/leaderboard";
 import { setupDealer } from "./ui/dealer";
 import { setupDock } from "./ui/dock";
+import { setupJoystick } from "./ui/joystick";
 import { toast, banner } from "./ui/notify";
 
 const game = new Phaser.Game({
@@ -48,6 +49,7 @@ game.events.once(Phaser.Core.Events.READY, () => {
   };
   net.setUi(ui);
   setupDock(scene, net, () => dealer.open());
+  setupJoystick(scene);
 
   // HUD + work-bar refresh loop
   const tick = () => {
