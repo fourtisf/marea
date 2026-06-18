@@ -53,16 +53,29 @@ Copy `.env.example` to `.env` for server/persistence/Solana config.
 | Phase | Status | Delivers |
 | --- | --- | --- |
 | 0 · Scaffold | ✅ | Monorepo, shared content + frozen `map.json`, Phaser client renders the harbor with golden-hour look, click/drag move, zoom, minimap (solo) |
-| 1 · Shared movement | 🚧 | Colyseus `HarborRoom`, authoritative movement, players see each other |
-| 2 · Marina & Credits | ⬜ | Server jobs, payouts, 3% discovery rolls, owner-only credits/inventory |
-| 3 · Dealer | ⬜ | Buy/equip vehicle (public), sell finds |
-| 4 · Estate | ⬜ | Buy villa (public nameplate), lease berth (public + passive income) |
-| 5 · Persistence | ⬜ | Prisma/Postgres load/save by wallet, offline berth income |
-| 6 · $RIV gate | ⬜ | Wallet Standard connect + gill balance read on join |
-| 7 · Social | ⬜ | Chat, leaderboard broadcast, rare-find announcements |
-| 8 · Polish | ⬜ | Mobile/touch, reduced motion, sprite hooks |
+| 1 · Shared movement | ✅ | Colyseus `HarborRoom`, authoritative movement, players see each other |
+| 2 · Marina & Credits | ✅ | Server jobs, payouts, 3% discovery rolls, owner-only credits/inventory |
+| 3 · Dealer | ✅ | Buy/equip vehicle (public), sell finds |
+| 4 · Estate | ✅ | Buy villa (public nameplate), lease berth (public + passive income) |
+| 5 · Persistence | ◐ | Load/save by wallet + offline berth income implemented behind a `Repo` interface; currently the in-memory `MemoryRepo` (survives the server process). Postgres/Prisma swap-in is the remaining work |
+| 6 · $RIV gate | ◐ | Read-only gate wired at join; dev-open now, with an isolated stub for the `gill` SPL-balance read and Wallet Standard connect |
+| 7 · Social | ✅ | Chat (rate-limit + sanitize), leaderboard broadcast, rare-find announcements |
+| 8 · Polish | ◐ | Touch + mouse input, atmosphere; reduced-motion + sprite swap-in pending |
 
 The approved visual + numeric source of truth is the prototype `marea-v3.html`.
+
+### Running the full multiplayer stack
+
+```bash
+npm install
+npm run build:shared
+npm run dev:server   # terminal 1 — Colyseus on :2567 (dev gate open)
+npm run dev:client   # terminal 2 — Vite on :5173; open two tabs to see each other
+```
+
+Server↔client behaviour is covered by the wire-level checks described in the
+commit history (presence, authoritative movement, owner-only private state,
+job adjacency validation, chat broadcast, leaderboard).
 
 ## Note on the frozen map
 

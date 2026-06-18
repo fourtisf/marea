@@ -3,16 +3,18 @@ import { HarborScene } from "./scenes/HarborScene";
 import { setupMinimap } from "./ui/minimap";
 import { updateHud } from "./ui/hud";
 import { ensureAudio, setVolume, setMuted, isMuted } from "./ui/audio";
+import { NetClient, type UiBridge } from "./net/room";
+import { setupChat } from "./ui/chat";
+import { setupLeaderboard } from "./ui/leaderboard";
+import { setupDealer } from "./ui/dealer";
+import { setupDock } from "./ui/dock";
+import { toast, banner } from "./ui/notify";
 
 const game = new Phaser.Game({
   type: Phaser.CANVAS,
   parent: "game",
   transparent: true,
-  scale: {
-    mode: Phaser.Scale.RESIZE,
-    width: window.innerWidth,
-    height: window.innerHeight,
-  },
+  scale: { mode: Phaser.Scale.RESIZE, width: window.innerWidth, height: window.innerHeight },
   fps: { target: 60 },
   scene: [HarborScene],
 });
@@ -27,23 +29,50 @@ game.events.once(Phaser.Core.Events.READY, () => {
   const scene = game.scene.getScene("harbor") as HarborScene;
   setupMinimap(scene);
 
-  // HUD refresh loop (cheap; reads local mirror of state).
-  const hudTick = () => {
-    updateHud(scene);
-    requestAnimationFrame(hudTick);
+  // net is constructed first (it only connects on intro), then the UI surfaces
+  // that need it, then the bridge is handed back to net.
+  const net = new NetClient(scene);
+  const dealer = setupDealer(scene, net);
+  const chat = setupChat(net);
+  const lead = setupLeaderboard(scene);
+
+  const ui: UiBridge = {
+    hud: () => updateHud(scene),
+    refreshDealer: () => dealer.refresh(),
+    chatLine: (from, text) => chat.addLine(from, text),
+    toast: (title, kicker, sub) => toast(title, kicker, sub),
+    banner: (text) => banner(text),
+    leaderboard: (rows) => lead.render(rows),
+    error: (msg) => toast(msg, "Harbor", ""),
+    workHide: () => byId("work").classList.remove("show"),
   };
-  requestAnimationFrame(hudTick);
+  net.setUi(ui);
+  setupDock(scene, net, () => dealer.open());
+
+  // HUD + work-bar refresh loop
+  const tick = () => {
+    updateHud(scene);
+    const job = scene.player.job;
+    const work = byId("work");
+    if (job) {
+      work.classList.add("show");
+      byId("workTitle").textContent = "Working…";
+      byId<HTMLElement>("workFill").style.width = Math.min(100, (job.t / job.dur) * 100) + "%";
+    }
+    byId("zoomLbl").textContent = Math.round(scene.zoom * 100) + "%";
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
 
   // zoom buttons
   byId("zoomIn").onclick = () => scene.zoomBy(1.18);
   byId("zoomOut").onclick = () => scene.zoomBy(0.85);
-  const updateZoomLabel = () => {
-    byId("zoomLbl").textContent = Math.round(scene.zoom * 100) + "%";
-    requestAnimationFrame(updateZoomLabel);
-  };
-  requestAnimationFrame(updateZoomLabel);
 
-  // volume
+  setupVolume();
+  setupIntro(net, chat);
+});
+
+function setupVolume(): void {
   const volBtn = byId<HTMLButtonElement>("volBtn");
   const volSlider = byId<HTMLInputElement>("volSlider");
   const volIcon = byId("volIcon");
@@ -67,22 +96,35 @@ game.events.once(Phaser.Core.Events.READY, () => {
     }
     setVolume(v);
   };
+}
 
-  // intro / enter gate (Phase 0: local. Phase 6 swaps in the wallet + $RIV check.)
+function setupIntro(net: NetClient, chat: { addLine: (from: string, text: string) => void }): void {
   const intro = byId("intro");
   const nameIn = byId<HTMLInputElement>("nameIn");
   const goBtn = byId<HTMLButtonElement>("goBtn");
-  goBtn.onclick = () => {
+  const err = byId("introErr");
+
+  const enter = async () => {
     const nm = nameIn.value.trim();
     if (!nm) {
-      byId("introErr").textContent = "Enter a name to continue.";
+      err.textContent = "Enter a name to continue.";
       return;
     }
-    scene.player.name = nm.slice(0, 14);
-    intro.classList.add("hide");
-    ensureAudio();
+    goBtn.disabled = true;
+    err.textContent = "";
+    try {
+      // Phase 6 will supply the connected wallet address here; dev gate is open.
+      await net.connect(nm.slice(0, 14), "");
+      intro.classList.add("hide");
+      ensureAudio();
+      chat.addLine("system", `Welcome to Marea, ${nm.slice(0, 14)}.`);
+    } catch (e) {
+      err.textContent = e instanceof Error ? e.message : "Could not reach the harbor.";
+      goBtn.disabled = false;
+    }
   };
+  goBtn.onclick = enter;
   nameIn.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") goBtn.click();
+    if (e.key === "Enter") enter();
   });
-});
+}

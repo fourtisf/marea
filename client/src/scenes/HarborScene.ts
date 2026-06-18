@@ -46,8 +46,9 @@ export interface LocalPlayer {
 
 export interface RemotePlayer {
   name: string;
-  // render-interp position (server-tweened in networked mode); in Phase 0 unused.
+  // render-interp position, lerped toward the server-tweened target.
   pos: { x: number; y: number };
+  target: { x: number; y: number };
   equipped: string;
   bubble: { text: string; t: number } | null;
 }
@@ -68,6 +69,10 @@ export class HarborScene extends Phaser.Scene {
   private marker: { x: number; y: number; t: number } | null = null;
   private pointerDown = false;
   private dragTile: Tile | null = null;
+
+  // networked mode: the server owns position; we lerp toward its tweened values.
+  networked = false;
+  private serverTarget: { x: number; y: number } | null = null;
 
   readonly player: LocalPlayer = {
     name: "you",
@@ -199,12 +204,45 @@ export class HarborScene extends Phaser.Scene {
     if (this.player.job) return;
     const p = pathTo(this.player.tile.x, this.player.tile.y, tx, ty);
     if (!p) return;
-    this.player.path = p;
+    // In networked mode the server owns movement; locally we only show the
+    // destination marker and send intent. Otherwise we step locally (Phase 0).
+    if (!this.networked) this.player.path = p;
     if (setMarker && p.length) {
       const end = p[p.length - 1];
       this.marker = { x: end.x, y: end.y, t: 0 };
     }
     if (this.onTravelIntent) this.onTravelIntent({ x: tx, y: ty });
+  }
+
+  // ---- net-driven mutators (called by the room sync) ----
+  applySelf(rx: number, ry: number, gx: number, gy: number, equipped: string): void {
+    this.serverTarget = { x: rx, y: ry };
+    this.player.tile = { x: gx, y: gy };
+    this.player.equipped = equipped;
+  }
+  upsertRemote(id: string, name: string, rx: number, ry: number, equipped: string): void {
+    let r = this.remotePlayers.get(id);
+    if (!r) {
+      r = { name, pos: { x: rx, y: ry }, target: { x: rx, y: ry }, equipped, bubble: null };
+      this.remotePlayers.set(id, r);
+    } else {
+      r.name = name;
+      r.equipped = equipped;
+      r.target = { x: rx, y: ry };
+    }
+  }
+  removeRemote(id: string): void {
+    this.remotePlayers.delete(id);
+  }
+  setRemoteBubble(id: string, text: string): void {
+    const r = this.remotePlayers.get(id);
+    if (r) r.bubble = { text, t: 3 };
+  }
+  beginJob(dur: number): void {
+    this.player.job = { dur, t: 0 };
+  }
+  clearJob(): void {
+    this.player.job = null;
   }
 
   // ---- simulation (local feel) ----
@@ -229,7 +267,26 @@ export class HarborScene extends Phaser.Scene {
   override update(_time: number, delta: number): void {
     const dt = Math.min(0.05, delta / 1000);
     this.tsec += dt;
-    this.stepMover(this.player, dt);
+
+    if (this.networked) {
+      // server-owned position: lerp toward the latest tweened target
+      if (this.serverTarget) {
+        const k = Math.min(1, dt * 16);
+        this.player.pos.x += (this.serverTarget.x - this.player.pos.x) * k;
+        this.player.pos.y += (this.serverTarget.y - this.player.pos.y) * k;
+      }
+      // local visual job progress (server owns completion via job_done)
+      if (this.player.job && this.player.job.t < this.player.job.dur) {
+        this.player.job.t = Math.min(this.player.job.dur, this.player.job.t + dt);
+      }
+    } else {
+      this.stepMover(this.player, dt);
+    }
+    for (const r of this.remotePlayers.values()) {
+      const k = Math.min(1, dt * 16);
+      r.pos.x += (r.target.x - r.pos.x) * k;
+      r.pos.y += (r.target.y - r.pos.y) * k;
+    }
 
     if (this.player.bubble) {
       this.player.bubble.t -= dt;

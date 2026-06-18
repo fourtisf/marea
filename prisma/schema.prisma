@@ -1,0 +1,26 @@
+// Persistence model for Marea (Phase 5). The server currently uses an in-memory
+// Repo; wiring a PrismaRepo behind the same interface (server/src/db/repo.ts)
+// completes Phase 5. Private, owner-only state keyed by wallet.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Player {
+  id        String   @id @default(cuid())
+  wallet    String   @unique
+  name      String
+  credits   Int      @default(40)
+  equipped  String   @default("tender_used")
+  owned     String[] // vehicle ids
+  finds     String[] // find ids
+  villa     String? // "x,y" or null
+  berths    String[] // berth ids
+  lastSeen  DateTime @default(now())
+  createdAt DateTime @default(now())
+}
