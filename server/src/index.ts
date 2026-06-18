@@ -1,4 +1,7 @@
 import { createServer } from "node:http";
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
+import { existsSync } from "node:fs";
 import express from "express";
 import { Server } from "@colyseus/core";
 import { WebSocketTransport } from "@colyseus/ws-transport";
@@ -12,6 +15,21 @@ const app = express();
 app.get("/health", (_req, res) => {
   res.json({ ok: true, service: "marea", ts: Date.now() });
 });
+
+// Serve the built client (same-origin with the game server). In production the
+// whole domain sits behind nginx, which proxies everything here. Colyseus owns
+// its own matchmaking/WS routes; Express only serves the static client.
+const here = dirname(fileURLToPath(import.meta.url)); // server/dist
+const clientDist = process.env.CLIENT_DIST
+  ? resolve(process.env.CLIENT_DIST)
+  : resolve(here, "../../client/dist");
+if (existsSync(clientDist)) {
+  app.use(express.static(clientDist));
+  app.get("*", (_req, res) => res.sendFile(resolve(clientDist, "index.html")));
+  console.log(`Serving client from ${clientDist}`);
+} else {
+  console.log(`Client build not found at ${clientDist} — run the client build to serve it.`);
+}
 
 const httpServer = createServer(app);
 const gameServer = new Server({

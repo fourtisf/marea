@@ -15,9 +15,13 @@ export interface UiBridge {
   workHide(): void;
 }
 
+// In dev, set VITE_SERVER_URL (client/.env.development → ws://localhost:2567).
+// In production the client is served same-origin by the server behind nginx, so
+// we connect to the same host/port as the page — works for both http→ws and
+// https→wss with no rebuild when SSL is added.
 const SERVER_URL =
   (import.meta.env.VITE_SERVER_URL as string | undefined) ??
-  `${location.protocol === "https:" ? "wss" : "ws"}://${location.hostname}:2567`;
+  `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}`;
 
 export class NetClient {
   private room: Room | null = null;
