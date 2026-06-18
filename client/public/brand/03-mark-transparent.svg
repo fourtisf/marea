@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="gm" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f6e2a4"/>
+      <stop offset=".5" stop-color="#dcb863"/>
+      <stop offset="1" stop-color="#b3892f"/>
+    </linearGradient>
+    <radialGradient id="sm" cx="50%" cy="42%" r="60%">
+      <stop offset="0" stop-color="#ffeec2"/>
+      <stop offset="1" stop-color="#d9b45e"/>
+    </radialGradient>
+  </defs>
+
+  <!-- sun rising between the arms of the M -->
+  <circle cx="128" cy="78" r="23" fill="url(#sm)"/>
+
+  <!-- M: symmetric, even stroke -->
+  <path d="M76 178 L76 104 L128 146 L180 104 L180 178"
+        fill="none" stroke="url(#gm)" stroke-width="13"
+        stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- tidy wave -->
+  <path d="M84 196 q11 -7 22 0 t22 0 t22 0 t22 0"
+        fill="none" stroke="url(#gm)" stroke-width="4" stroke-linecap="round" opacity=".9"/>
+</svg>

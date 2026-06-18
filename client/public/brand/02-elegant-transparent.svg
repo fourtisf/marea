@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 240" width="640" height="240" font-family="Georgia, 'Times New Roman', serif">
+  <defs>
+    <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f0d488"/>
+      <stop offset=".5" stop-color="#d9b45e"/>
+      <stop offset="1" stop-color="#b6892f"/>
+    </linearGradient>
+    <radialGradient id="s2" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#ffe9b8"/>
+      <stop offset="1" stop-color="#d9b45e"/>
+    </radialGradient>
+  </defs>
+
+  <g transform="translate(320,58)">
+    <circle r="15" fill="url(#s2)"/>
+    <g stroke="#d9b45e" stroke-width="2" stroke-linecap="round">
+      <line x1="0" y1="-24" x2="0" y2="-30"/>
+      <line x1="17" y1="-17" x2="21" y2="-21"/>
+      <line x1="-17" y1="-17" x2="-21" y2="-21"/>
+      <line x1="24" y1="0" x2="30" y2="0"/>
+      <line x1="-24" y1="0" x2="-30" y2="0"/>
+    </g>
+  </g>
+
+  <text x="320" y="150" text-anchor="middle" font-size="76" letter-spacing="20" fill="url(#g2)" font-weight="600">MAREA</text>
+
+  <line x1="150" y1="178" x2="300" y2="178" stroke="#d9b45e" stroke-width="1.2"/>
+  <line x1="340" y1="178" x2="490" y2="178" stroke="#d9b45e" stroke-width="1.2"/>
+  <path d="M320 172 l7 6 -7 6 -7 -6 z" fill="#d9b45e"/>
+
+  <text x="320" y="202" text-anchor="middle" font-family="Inter, system-ui, sans-serif"
+        font-size="12.5" letter-spacing="8" fill="#c79a47">MEDITERRANEAN HARBOR · GOLDEN HOUR</text>
+</svg>
