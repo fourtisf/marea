@@ -4,6 +4,7 @@
 import vehiclesJson from "./vehicles.json" with { type: "json" };
 import findsJson from "./finds.json" with { type: "json" };
 import jobsJson from "./jobs.json" with { type: "json" };
+import looksJson from "./looks.json" with { type: "json" };
 import mapJson from "./map.json" with { type: "json" };
 
 export type VehicleType = "boat" | "land";
@@ -70,10 +71,20 @@ export interface MareaMap {
   ambientBoats: AmbientBoat[];
 }
 
+export interface Look {
+  id: string;
+  name: string;
+  body: string; // body/clothing color
+  hat: string | null; // hat color, or null for none
+}
+
 export const VEHICLES = vehiclesJson as Vehicle[];
 export const FINDS = findsJson as Find[];
 export const JOBS = jobsJson as Record<StationKind, Job[]>;
+export const LOOKS = looksJson as Look[];
 export const MAP = mapJson as unknown as MareaMap;
+
+export const lookById = (id: string): Look | undefined => LOOKS.find((l) => l.id === id);
 
 // Rare finds that trigger a harbor-wide announcement.
 export const RARE_FINDS: readonly string[] = ["find_plate", "find_ring"];

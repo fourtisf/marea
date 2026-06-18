@@ -4,6 +4,8 @@ import {
   MOVE_TILES_PER_SEC,
   STARTING_VEHICLE,
   STARTING_CREDITS,
+  STARTING_LOOK,
+  LOOKS,
   TILE_W,
   TILE_H,
   type StationKind,
@@ -36,6 +38,7 @@ export interface LocalPlayer {
   pos: { x: number; y: number };
   path: Tile[];
   equipped: string;
+  look: string;
   job: { dur: number; t: number } | null;
   bubble: { text: string; t: number } | null;
   // owner-only economic state — mirrored from server messages in later phases.
@@ -52,6 +55,20 @@ export interface RemotePlayer {
   pos: { x: number; y: number };
   target: { x: number; y: number };
   equipped: string;
+  look: string;
+  bubble: { text: string; t: number } | null;
+}
+
+// Client-only ambient resident — decorative wanderer, not synced and not in any
+// gameplay (leaderboard etc.). Makes the harbor feel lived-in.
+export interface AmbientNpc {
+  name: string;
+  tile: Tile;
+  pos: { x: number; y: number };
+  path: Tile[];
+  equipped: string;
+  look: string;
+  wait: number;
   bubble: { text: string; t: number } | null;
 }
 
@@ -82,6 +99,7 @@ export class HarborScene extends Phaser.Scene {
     pos: { ...MAP.spawn },
     path: [],
     equipped: STARTING_VEHICLE,
+    look: STARTING_LOOK,
     job: null,
     bubble: null,
     credits: STARTING_CREDITS,
@@ -91,6 +109,7 @@ export class HarborScene extends Phaser.Scene {
     berths: [],
   };
   readonly remotePlayers = new Map<string, RemotePlayer>();
+  readonly npcs: AmbientNpc[] = [];
   readonly estate: EstateMarkers = { villaOwners: new Map(), berthOwners: new Map() };
 
   // Hooks the net/UI layers plug into. Default to local behaviour (Phase 0).
@@ -114,6 +133,65 @@ export class HarborScene extends Phaser.Scene {
     });
 
     this.bindInput();
+    this.spawnNpcs(12);
+  }
+
+  // ---- ambient residents (client-only decoration) ----
+  private static readonly NPC_NAMES = [
+    "marco", "lucia", "dario", "sofia", "enzo", "bianca", "remy",
+    "nina", "leo", "cira", "vito", "aria", "gino", "mila",
+  ];
+  private static readonly NPC_VEHICLES = [
+    "scooter_city", "runabout_classic", "roadster", "cruiser_sport", "tender_used", "mega_yacht",
+  ];
+
+  private randomWalkableNear(cx: number, cy: number, r: number): Tile | null {
+    for (let i = 0; i < 60; i++) {
+      const x = cx + Math.floor(Math.random() * (2 * r + 1)) - r;
+      const y = cy + Math.floor(Math.random() * (2 * r + 1)) - r;
+      if (walkable(x, y)) return { x, y };
+    }
+    return null;
+  }
+
+  private spawnNpcs(n: number): void {
+    const pick = <T>(a: readonly T[]): T => a[Math.floor(Math.random() * a.length)];
+    for (let i = 0; i < n; i++) {
+      const t = this.randomWalkableNear(MAP.spawn.x, MAP.spawn.y, 14);
+      if (!t) continue;
+      this.npcs.push({
+        name: pick(HarborScene.NPC_NAMES),
+        tile: { ...t },
+        pos: { ...t },
+        path: [],
+        equipped: pick(HarborScene.NPC_VEHICLES),
+        look: pick(LOOKS).id,
+        wait: Math.random() * 3,
+        bubble: null,
+      });
+    }
+  }
+
+  private stepNpcs(dt: number): void {
+    for (const n of this.npcs) {
+      if (n.path.length) {
+        this.stepMover(n, dt);
+      } else {
+        n.wait -= dt;
+        if (n.wait <= 0) {
+          const t = this.randomWalkableNear(n.tile.x, n.tile.y, 8);
+          if (t) {
+            const p = pathTo(n.tile.x, n.tile.y, t.x, t.y);
+            if (p) n.path = p;
+          }
+          n.wait = 1.5 + Math.random() * 3;
+        }
+      }
+      if (n.bubble) {
+        n.bubble.t -= dt;
+        if (n.bubble.t <= 0) n.bubble = null;
+      }
+    }
   }
 
   // ---- input (manual; we own rendering, so DOM listeners are simplest) ----
@@ -237,19 +315,21 @@ export class HarborScene extends Phaser.Scene {
   }
 
   // ---- net-driven mutators (called by the room sync) ----
-  applySelf(rx: number, ry: number, gx: number, gy: number, equipped: string): void {
+  applySelf(rx: number, ry: number, gx: number, gy: number, equipped: string, look: string): void {
     this.serverTarget = { x: rx, y: ry };
     this.player.tile = { x: gx, y: gy };
     this.player.equipped = equipped;
+    this.player.look = look;
   }
-  upsertRemote(id: string, name: string, rx: number, ry: number, equipped: string): void {
+  upsertRemote(id: string, name: string, rx: number, ry: number, equipped: string, look: string): void {
     let r = this.remotePlayers.get(id);
     if (!r) {
-      r = { name, pos: { x: rx, y: ry }, target: { x: rx, y: ry }, equipped, bubble: null };
+      r = { name, pos: { x: rx, y: ry }, target: { x: rx, y: ry }, equipped, look, bubble: null };
       this.remotePlayers.set(id, r);
     } else {
       r.name = name;
       r.equipped = equipped;
+      r.look = look;
       r.target = { x: rx, y: ry };
     }
   }
@@ -309,6 +389,7 @@ export class HarborScene extends Phaser.Scene {
       r.pos.x += (r.target.x - r.pos.x) * k;
       r.pos.y += (r.target.y - r.pos.y) * k;
     }
+    this.stepNpcs(dt);
 
     if (this.player.bubble) {
       this.player.bubble.t -= dt;
@@ -434,6 +515,11 @@ export class HarborScene extends Phaser.Scene {
       const w = cartToIso(r.pos.x, r.pos.y);
       if (!vis(w.x, w.y)) continue;
       objs.push({ d: r.pos.x + r.pos.y, fn: () => drawPerson(ctx, r, w.x, w.y, false) });
+    }
+    for (const n of this.npcs) {
+      const w = cartToIso(n.pos.x, n.pos.y);
+      if (!vis(w.x, w.y)) continue;
+      objs.push({ d: n.pos.x + n.pos.y, fn: () => drawPerson(ctx, n, w.x, w.y, false) });
     }
     {
       const w = cartToIso(this.player.pos.x, this.player.pos.y);

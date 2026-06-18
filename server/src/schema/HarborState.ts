@@ -1,5 +1,5 @@
 import { Schema, MapSchema, type } from "@colyseus/schema";
-import { STARTING_VEHICLE } from "@marea/shared";
+import { STARTING_VEHICLE, STARTING_LOOK } from "@marea/shared";
 
 // PUBLIC state only — synced to everyone. Private state (credits, inventory,
 // finds, estate details) is never declared here; it is delivered via owner-only
@@ -11,6 +11,7 @@ export class PlayerSchema extends Schema {
   @type("number") rx = 0; // render-interp x (float, server-tweened)
   @type("number") ry = 0;
   @type("string") equipped: string = STARTING_VEHICLE;
+  @type("string") look: string = STARTING_LOOK; // public appearance preset
 }
 
 export class HarborState extends Schema {

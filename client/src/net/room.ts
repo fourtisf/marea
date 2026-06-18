@@ -32,10 +32,10 @@ export class NetClient {
     this.ui = ui;
   }
 
-  async connect(name: string, wallet: string): Promise<void> {
+  async connect(name: string, wallet: string, look: string): Promise<void> {
     const client = new Client(SERVER_URL);
     // joinOrCreate rejects (throws) if the server's gate denies entry.
-    const room = await client.joinOrCreate("harbor", { name, wallet });
+    const room = await client.joinOrCreate("harbor", { name, wallet, look });
     this.room = room;
     this.scene.networked = true;
     this.scene.onTravelIntent = (t) => this.send({ t: "move", gridX: t.x, gridY: t.y });
@@ -59,9 +59,9 @@ export class NetClient {
     state.players.onAdd((player: any, sid: string) => {
       const apply = () => {
         if (sid === room.sessionId) {
-          this.scene.applySelf(player.rx, player.ry, player.gx, player.gy, player.equipped);
+          this.scene.applySelf(player.rx, player.ry, player.gx, player.gy, player.equipped, player.look);
         } else {
-          this.scene.upsertRemote(sid, player.name, player.rx, player.ry, player.equipped);
+          this.scene.upsertRemote(sid, player.name, player.rx, player.ry, player.equipped, player.look);
         }
       };
       apply();

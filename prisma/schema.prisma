@@ -17,6 +17,7 @@ model Player {
   name      String
   credits   Int      @default(40)
   equipped  String   @default("tender_used")
+  look      String   @default("skipper")
   owned     String[] // vehicle ids
   finds     String[] // find ids
   villa     String? // "x,y" or null

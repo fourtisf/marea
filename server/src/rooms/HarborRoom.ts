@@ -1,5 +1,5 @@
 import { Room, type Client } from "@colyseus/core";
-import { MAP, SERVER_TICK_HZ, type ClientMessage, type ServerMessage } from "@marea/shared";
+import { MAP, SERVER_TICK_HZ, STARTING_LOOK, lookById, type ClientMessage, type ServerMessage } from "@marea/shared";
 import { HarborState, PlayerSchema } from "../schema/HarborState.js";
 import type { PrivatePlayer } from "../types.js";
 import { requestMove, tickMovement } from "../systems/movement.js";
@@ -24,6 +24,7 @@ interface RoomOptions {
 interface JoinOptions {
   name?: string;
   wallet?: string;
+  look?: string;
 }
 
 const LEADERBOARD_INTERVAL = 2000;
@@ -125,6 +126,9 @@ export class HarborRoom extends Room<HarborState> {
       offline = offlineBerthIncome(rec);
     }
 
+    // chosen appearance (validated against content); falls back to saved/default
+    const look = (options.look && lookById(options.look) ? options.look : rec.look) || STARTING_LOOK;
+
     const priv: PrivatePlayer = {
       sessionId: client.sessionId,
       wallet,
@@ -132,6 +136,7 @@ export class HarborRoom extends Room<HarborState> {
       credits: rec.credits + offline,
       owned: [...rec.owned],
       equipped: rec.equipped,
+      look,
       finds: [...rec.finds],
       villa: rec.villa,
       berths: [...rec.berths],
@@ -150,6 +155,7 @@ export class HarborRoom extends Room<HarborState> {
     sp.rx = MAP.spawn.x;
     sp.ry = MAP.spawn.y;
     sp.equipped = priv.equipped;
+    sp.look = priv.look;
     this.state.players.set(client.sessionId, sp);
 
     // re-apply owned estate to the PUBLIC schema
@@ -256,6 +262,7 @@ export class HarborRoom extends Room<HarborState> {
       name: priv.name,
       credits: Math.floor(priv.credits),
       equipped: priv.equipped,
+      look: priv.look,
       owned: [...priv.owned],
       finds: [...priv.finds],
       villa: priv.villa,

@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { LOOKS, STARTING_LOOK } from "@marea/shared";
 import { HarborScene } from "./scenes/HarborScene";
 import { setupMinimap } from "./ui/minimap";
 import { updateHud } from "./ui/hud";
@@ -106,6 +107,20 @@ function setupIntro(net: NetClient, chat: { addLine: (from: string, text: string
   const goBtn = byId<HTMLButtonElement>("goBtn");
   const err = byId("introErr");
 
+  // avatar picker
+  let selectedLook = STARTING_LOOK;
+  const picker = byId("lookPicker");
+  picker.innerHTML = LOOKS.map((l) => {
+    const hat = l.hat ? `box-shadow:inset 0 5px 0 ${l.hat}` : "";
+    return `<button class="swatch-look${l.id === selectedLook ? " sel" : ""}" data-look="${l.id}" title="${l.name}"><span class="fig" style="background:${l.body};${hat}"></span></button>`;
+  }).join("");
+  picker.querySelectorAll<HTMLButtonElement>(".swatch-look").forEach((b) => {
+    b.onclick = () => {
+      selectedLook = b.dataset.look ?? STARTING_LOOK;
+      picker.querySelectorAll(".swatch-look").forEach((x) => x.classList.toggle("sel", x === b));
+    };
+  });
+
   const enter = async () => {
     const nm = nameIn.value.trim();
     if (!nm) {
@@ -116,7 +131,7 @@ function setupIntro(net: NetClient, chat: { addLine: (from: string, text: string
     err.textContent = "";
     try {
       // Phase 6 will supply the connected wallet address here; dev gate is open.
-      await net.connect(nm.slice(0, 14), "");
+      await net.connect(nm.slice(0, 14), "", selectedLook);
       intro.classList.add("hide");
       ensureAudio();
       chat.addLine("system", `Welcome to Marea, ${nm.slice(0, 14)}.`);

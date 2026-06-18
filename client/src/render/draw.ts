@@ -1,7 +1,7 @@
 // Faithful port of the prototype's canvas drawing (golden-hour primitives).
 // These are CLIENT render helpers only. Art is intentionally primitive shapes
 // so sprites can be swapped in later (Phase 8) without touching gameplay.
-import { TILE_W as TW, TILE_H as TH, TILE_THICK as THICK, vehicleById } from "@marea/shared";
+import { TILE_W as TW, TILE_H as TH, TILE_THICK as THICK, vehicleById, lookById } from "@marea/shared";
 import type { StationKind } from "@marea/shared";
 
 type Ctx = CanvasRenderingContext2D;
@@ -365,6 +365,7 @@ function vehBadge(ctx: Ctx, sx: number, sy: number, vid: string) {
 export interface PersonDraw {
   name: string;
   equipped: string;
+  look?: string;
   bubble?: { text: string } | null;
 }
 
@@ -372,7 +373,9 @@ export function drawPerson(ctx: Ctx, ent: PersonDraw, sx: number, sy: number, yo
   shadow(ctx, sx, sy, 18, 8);
   const land = vType(ent.equipped) === "land";
   vehBadge(ctx, sx + (land ? 0 : 14), sy + (land ? 6 : 0), ent.equipped);
-  ctx.fillStyle = you ? "#15323b" : "#5a6e74";
+  const look = ent.look ? lookById(ent.look) : undefined;
+  const body = look?.body ?? (you ? "#15323b" : "#5a6e74");
+  ctx.fillStyle = body;
   ctx.beginPath();
   ctx.roundRect(sx - 5, sy - 20, 10, 16, 4);
   ctx.fill();
@@ -380,6 +383,16 @@ export function drawPerson(ctx: Ctx, ent: PersonDraw, sx: number, sy: number, yo
   ctx.beginPath();
   ctx.arc(sx, sy - 24, 5, 0, 7);
   ctx.fill();
+  // hat (optional, per look)
+  if (look?.hat) {
+    ctx.fillStyle = look.hat;
+    ctx.beginPath();
+    ctx.ellipse(sx, sy - 27, 8, 2.6, 0, 0, 7); // brim
+    ctx.fill();
+    ctx.beginPath();
+    ctx.roundRect(sx - 4.5, sy - 32, 9, 6, 2); // crown
+    ctx.fill();
+  }
   ctx.font = "600 10px Inter";
   ctx.textAlign = "center";
   const w = ctx.measureText(ent.name).width + 12;

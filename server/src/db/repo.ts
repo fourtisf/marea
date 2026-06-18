@@ -3,6 +3,7 @@ import {
   BERTH_RATE_PER_SEC,
   STARTING_CREDITS,
   STARTING_VEHICLE,
+  STARTING_LOOK,
 } from "@marea/shared";
 
 // Persisted, owner-private player record (keyed by wallet).
@@ -11,6 +12,7 @@ export interface PersistedPlayer {
   name: string;
   credits: number;
   equipped: string;
+  look: string;
   owned: string[];
   finds: string[];
   villa: string | null;
@@ -47,6 +49,7 @@ export function freshPlayer(wallet: string, name: string): PersistedPlayer {
     name,
     credits: STARTING_CREDITS,
     equipped: STARTING_VEHICLE,
+    look: STARTING_LOOK,
     owned: [STARTING_VEHICLE],
     finds: [],
     villa: null,

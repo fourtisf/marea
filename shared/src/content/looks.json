@@ -1,0 +1,10 @@
+[
+  {"id":"skipper","name":"Skipper","body":"#2b4d63","hat":"#15323b"},
+  {"id":"sailor","name":"Sailor","body":"#e8e2d2","hat":null},
+  {"id":"captain","name":"Captain","body":"#c9a24a","hat":"#15323b"},
+  {"id":"diver","name":"Diver","body":"#1fa4bd","hat":null},
+  {"id":"local","name":"Local","body":"#b23a2e","hat":null},
+  {"id":"tourist","name":"Tourist","body":"#3f8a4a","hat":"#f4ecdb"},
+  {"id":"merchant","name":"Merchant","body":"#7a4ea3","hat":"#e7c46b"},
+  {"id":"regular","name":"Regular","body":"#5a6e74","hat":null}
+]

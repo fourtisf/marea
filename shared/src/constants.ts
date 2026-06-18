@@ -13,6 +13,7 @@ export const MOVE_TILES_PER_SEC = 4.4;
 export const DROP_CHANCE_PER_JOB = 0.03;
 export const STARTING_CREDITS = 40;
 export const STARTING_VEHICLE = "tender_used";
+export const STARTING_LOOK = "skipper";
 export const BERTH_PRICE = 900;
 export const BERTH_RATE_PER_SEC = 0.12;     // passive Credits per leased berth
 export const OFFLINE_CAP_MINUTES = 480;     // berth income while away, capped

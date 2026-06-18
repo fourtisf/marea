@@ -12,6 +12,7 @@ export interface PrivatePlayer {
   credits: number;
   owned: string[];
   equipped: string;
+  look: string;
   finds: string[];
   villa: string | null; // "x,y" or null
   berths: string[]; // berth ids
