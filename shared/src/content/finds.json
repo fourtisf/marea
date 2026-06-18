@@ -1,0 +1,7 @@
+[
+  {"id":"find_compass","name":"Vintage Brass Compass","weight":40,"sell":220,"col":"#c08a3e"},
+  {"id":"find_watch","name":"Lost Designer Watch","weight":25,"sell":650,"col":"#d9c27a"},
+  {"id":"find_pearl","name":"Black Pearl","weight":20,"sell":900,"col":"#3a3f4a"},
+  {"id":"find_plate","name":"Rare License Plate","weight":12,"sell":1500,"col":"#b6c2c6"},
+  {"id":"find_ring","name":"Diamond Signet Ring","weight":3,"sell":4200,"col":"#bfe9ff"}
+]

@@ -1,0 +1,400 @@
+import Phaser from "phaser";
+import {
+  MAP,
+  MOVE_TILES_PER_SEC,
+  STARTING_VEHICLE,
+  STARTING_CREDITS,
+  type StationKind,
+} from "@marea/shared";
+import { cartToIso, screenToTile, type ScreenPoint, type Tile } from "../iso/iso";
+import { walkable, propAt, berthAt, pathTo, inBounds } from "../world";
+import {
+  diamond,
+  quayTile,
+  waterTile,
+  drawVilla,
+  drawPalm,
+  drawDealerProp,
+  drawStation,
+  drawCafe,
+  drawLamp,
+  drawCar,
+  drawStall,
+  drawFountain,
+  drawBoatParked,
+  drawPerson,
+} from "../render/draw";
+
+const ZMIN = 0.4;
+const ZMAX = 2.0;
+
+export interface LocalPlayer {
+  name: string;
+  tile: Tile;
+  pos: { x: number; y: number };
+  path: Tile[];
+  equipped: string;
+  job: { dur: number; t: number } | null;
+  bubble: { text: string; t: number } | null;
+  // owner-only economic state — mirrored from server messages in later phases.
+  credits: number;
+  owned: string[];
+  finds: string[];
+  villaOwned: string | null;
+  berths: string[];
+}
+
+export interface RemotePlayer {
+  name: string;
+  // render-interp position (server-tweened in networked mode); in Phase 0 unused.
+  pos: { x: number; y: number };
+  equipped: string;
+  bubble: { text: string; t: number } | null;
+}
+
+// Public ownership markers mirrored from the room schema (Phase 4); empty in Phase 0.
+export interface EstateMarkers {
+  villaOwners: Map<string, string>; // "x,y" -> name
+  berthOwners: Map<string, string>; // berthId -> name
+}
+
+export class HarborScene extends Phaser.Scene {
+  private ctx!: CanvasRenderingContext2D;
+  readonly cam: ScreenPoint = { x: 0, y: 0 };
+  zoom = 1;
+  zoomTarget = 1;
+  private tsec = 0;
+  private hover: Tile | null = null;
+  private marker: { x: number; y: number; t: number } | null = null;
+  private pointerDown = false;
+  private dragTile: Tile | null = null;
+
+  readonly player: LocalPlayer = {
+    name: "you",
+    tile: { ...MAP.spawn },
+    pos: { ...MAP.spawn },
+    path: [],
+    equipped: STARTING_VEHICLE,
+    job: null,
+    bubble: null,
+    credits: STARTING_CREDITS,
+    owned: [STARTING_VEHICLE],
+    finds: [],
+    villaOwned: null,
+    berths: [],
+  };
+  readonly remotePlayers = new Map<string, RemotePlayer>();
+  readonly estate: EstateMarkers = { villaOwners: new Map(), berthOwners: new Map() };
+
+  // Hooks the net/UI layers plug into. Default to local behaviour (Phase 0).
+  onTravelIntent: ((t: Tile) => void) | null = null;
+  onContextChange: (() => void) | null = null;
+
+  constructor() {
+    super("harbor");
+  }
+
+  create(): void {
+    const renderer = this.game.renderer as Phaser.Renderer.Canvas.CanvasRenderer;
+    this.ctx = renderer.gameContext;
+    const sp = cartToIso(MAP.spawn.x, MAP.spawn.y);
+    this.cam.x = sp.x;
+    this.cam.y = sp.y;
+
+    this.game.events.on(Phaser.Core.Events.POST_RENDER, this.draw, this);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.game.events.off(Phaser.Core.Events.POST_RENDER, this.draw, this);
+    });
+
+    this.bindInput();
+  }
+
+  // ---- input (manual; we own rendering, so DOM listeners are simplest) ----
+  private get cssW() { return this.scale.width; }
+  private get cssH() { return this.scale.height; }
+
+  private toTile(clientX: number, clientY: number): Tile {
+    const canvas = this.game.canvas;
+    const r = canvas.getBoundingClientRect();
+    return screenToTile(clientX - r.left, clientY - r.top, this.cam, this.zoom, this.cssW, this.cssH);
+  }
+
+  private bindInput(): void {
+    const canvas = this.game.canvas;
+
+    canvas.addEventListener("mousemove", (e) => {
+      this.hover = this.toTile(e.clientX, e.clientY);
+      if (this.pointerDown && !this.player.job) {
+        const t = this.hover;
+        if (walkable(t.x, t.y) && (!this.dragTile || this.dragTile.x !== t.x || this.dragTile.y !== t.y)) {
+          this.dragTile = t;
+          this.travelTo(t.x, t.y, false);
+        }
+      }
+    });
+    canvas.addEventListener("mouseleave", () => {
+      this.hover = null;
+      this.pointerDown = false;
+    });
+    canvas.addEventListener("mousedown", (e) => this.pointerStart(e.clientX, e.clientY));
+    window.addEventListener("mouseup", () => {
+      this.pointerDown = false;
+      this.dragTile = null;
+    });
+
+    canvas.addEventListener(
+      "touchstart",
+      (e) => {
+        const tp = e.touches[0];
+        if (tp) this.pointerStart(tp.clientX, tp.clientY);
+      },
+      { passive: true }
+    );
+    canvas.addEventListener(
+      "touchmove",
+      (e) => {
+        const tp = e.touches[0];
+        if (!tp || this.player.job) return;
+        const t = this.toTile(tp.clientX, tp.clientY);
+        if (walkable(t.x, t.y) && (!this.dragTile || this.dragTile.x !== t.x || this.dragTile.y !== t.y)) {
+          this.dragTile = t;
+          this.travelTo(t.x, t.y, false);
+        }
+      },
+      { passive: true }
+    );
+    window.addEventListener("touchend", () => {
+      this.pointerDown = false;
+      this.dragTile = null;
+    });
+
+    canvas.addEventListener(
+      "wheel",
+      (e) => {
+        e.preventDefault();
+        this.zoomTarget = Math.max(ZMIN, Math.min(ZMAX, this.zoomTarget * (e.deltaY < 0 ? 1.12 : 0.89)));
+      },
+      { passive: false }
+    );
+  }
+
+  private pointerStart(clientX: number, clientY: number): void {
+    this.pointerDown = true;
+    this.dragTile = null;
+    if (this.player.job) return;
+    const t = this.toTile(clientX, clientY);
+    if (!inBounds(t.x, t.y)) return;
+    if (propAt(t.x, t.y) || berthAt(t.x, t.y) || walkable(t.x, t.y)) {
+      this.travelTo(t.x, t.y, true);
+    }
+  }
+
+  zoomBy(factor: number): void {
+    this.zoomTarget = Math.max(ZMIN, Math.min(ZMAX, this.zoomTarget * factor));
+  }
+
+  // Walk toward a tile. Sends intent to the server when networked, and always
+  // computes a local path for instant feel + the destination marker.
+  travelTo(tx: number, ty: number, setMarker: boolean): void {
+    if (this.player.job) return;
+    const p = pathTo(this.player.tile.x, this.player.tile.y, tx, ty);
+    if (!p) return;
+    this.player.path = p;
+    if (setMarker && p.length) {
+      const end = p[p.length - 1];
+      this.marker = { x: end.x, y: end.y, t: 0 };
+    }
+    if (this.onTravelIntent) this.onTravelIntent({ x: tx, y: ty });
+  }
+
+  // ---- simulation (local feel) ----
+  private stepMover(m: { pos: { x: number; y: number }; tile: Tile; path: Tile[] }, dt: number): void {
+    if (!m.path.length) return;
+    const nx = m.path[0];
+    const dx = nx.x - m.pos.x,
+      dy = nx.y - m.pos.y;
+    const d = Math.hypot(dx, dy),
+      s = MOVE_TILES_PER_SEC * dt;
+    if (d <= s) {
+      m.pos.x = nx.x;
+      m.pos.y = nx.y;
+      m.tile = { x: nx.x, y: nx.y };
+      m.path.shift();
+    } else {
+      m.pos.x += (dx / d) * s;
+      m.pos.y += (dy / d) * s;
+    }
+  }
+
+  override update(_time: number, delta: number): void {
+    const dt = Math.min(0.05, delta / 1000);
+    this.tsec += dt;
+    this.stepMover(this.player, dt);
+
+    if (this.player.bubble) {
+      this.player.bubble.t -= dt;
+      if (this.player.bubble.t <= 0) this.player.bubble = null;
+    }
+    for (const r of this.remotePlayers.values()) {
+      if (r.bubble) {
+        r.bubble.t -= dt;
+        if (r.bubble.t <= 0) r.bubble = null;
+      }
+    }
+    if (this.marker) {
+      this.marker.t += dt;
+      if (this.marker.t > 1.1) this.marker = null;
+    }
+
+    const pw = cartToIso(this.player.pos.x, this.player.pos.y);
+    this.cam.x += (pw.x - this.cam.x) * Math.min(1, dt * 6);
+    this.cam.y += (pw.y - this.cam.y) * Math.min(1, dt * 6);
+    if (Math.abs(this.zoom - this.zoomTarget) > 0.001) {
+      this.zoom += (this.zoomTarget - this.zoom) * Math.min(1, dt * 10);
+    }
+  }
+
+  // ---- rendering (post-render, faithful to the prototype) ----
+  private draw(): void {
+    const ctx = this.ctx;
+    const W = this.cssW,
+      H = this.cssH;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.save();
+    ctx.translate(W / 2, H / 2);
+    ctx.scale(this.zoom, this.zoom);
+    ctx.translate(-this.cam.x, -this.cam.y);
+
+    const hw = W / 2 / this.zoom,
+      hh = H / 2 / this.zoom;
+    const wl = this.cam.x - hw - 64,
+      wr = this.cam.x + hw + 64;
+    const wt = this.cam.y - hh - 160,
+      wb = this.cam.y + hh + 32 + 10;
+    const vis = (x: number, y: number) => x >= wl && x <= wr && y >= wt && y <= wb;
+    const G = MAP.grid;
+
+    // ground tiles, back-to-front by cx+cy
+    for (let s = 0; s <= 2 * (G - 1); s++) {
+      for (let cy = 0; cy < G; cy++) {
+        const cx = s - cy;
+        if (cx < 0 || cx >= G) continue;
+        const w = cartToIso(cx, cy);
+        if (!vis(w.x, w.y)) continue;
+        if (MAP.tiles[cy][cx] === "water") waterTile(ctx, cx, cy, w.x, w.y, this.tsec);
+        else quayTile(ctx, cx, cy, w.x, w.y);
+      }
+    }
+
+    if (this.hover && walkable(this.hover.x, this.hover.y)) {
+      const w = cartToIso(this.hover.x, this.hover.y);
+      if (vis(w.x, w.y)) diamond(ctx, w.x, w.y - 1, "rgba(255,255,255,.22)", "rgba(255,255,255,.6)");
+    }
+    if (this.marker) {
+      const w = cartToIso(this.marker.x, this.marker.y);
+      const r = 8 + Math.sin(this.marker.t * 8) * 2;
+      ctx.strokeStyle = "rgba(231,196,107,.95)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.ellipse(w.x, w.y, r, r / 2, 0, 0, 7);
+      ctx.stroke();
+    }
+
+    // depth-sorted objects
+    const objs: { d: number; fn: () => void }[] = [];
+    for (const p of MAP.props) {
+      const w = cartToIso(p.x, p.y);
+      if (!vis(w.x, w.y)) continue;
+      const d = p.x + p.y + (p.kind === "villa" ? -0.1 : p.kind === "palm" ? 0.05 : 0);
+      objs.push({
+        d,
+        fn: () => {
+          switch (p.kind) {
+            case "villa": {
+              const owner = this.estate.villaOwners.get(p.x + "," + p.y) ?? this.localVillaOwner(p.x, p.y);
+              drawVilla(ctx, { h: p.h, roof: p.roof, forSale: p.forSale && !owner, owner }, w.x, w.y);
+              break;
+            }
+            case "palm": drawPalm(ctx, w.x, w.y); break;
+            case "dealer": drawDealerProp(ctx, w.x, w.y); break;
+            case "station": drawStation(ctx, p.station as StationKind, w.x, w.y); break;
+            case "cafe": drawCafe(ctx, w.x, w.y); break;
+            case "lamp": drawLamp(ctx, w.x, w.y, true); break;
+            case "car": drawCar(ctx, w.x, w.y, p.col ?? "#b23a2e"); break;
+            case "stall": drawStall(ctx, w.x, w.y); break;
+            case "fountain": drawFountain(ctx, w.x, w.y, this.tsec); break;
+          }
+        },
+      });
+    }
+    for (const b of MAP.ambientBoats) {
+      const w = cartToIso(b.x, b.y);
+      if (!vis(w.x, w.y)) continue;
+      objs.push({ d: b.x + b.y, fn: () => drawBoatParked(ctx, w.x, w.y, b.tier, b.ph, this.tsec) });
+    }
+    // local player's parked boat at first owned berth
+    if (this.player.berths.length) {
+      const bb = MAP.berths.find((b) => b.id === this.player.berths[0]);
+      if (bb) {
+        const w = cartToIso(bb.x, bb.y);
+        if (vis(w.x, w.y))
+          objs.push({
+            d: bb.x + bb.y,
+            fn: () => {
+              const tier = this.player.equipped; // boats only look right; runabout fallback
+              drawBoatParked(ctx, w.x, w.y, tier, 1.2, this.tsec);
+              ctx.font = "600 9px Inter";
+              ctx.textAlign = "center";
+              ctx.fillStyle = "#15323b";
+              ctx.fillText(this.player.name, w.x, w.y - 20);
+            },
+          });
+      }
+    }
+    for (const r of this.remotePlayers.values()) {
+      const w = cartToIso(r.pos.x, r.pos.y);
+      if (!vis(w.x, w.y)) continue;
+      objs.push({ d: r.pos.x + r.pos.y, fn: () => drawPerson(ctx, r, w.x, w.y, false) });
+    }
+    {
+      const w = cartToIso(this.player.pos.x, this.player.pos.y);
+      objs.push({
+        d: this.player.pos.x + this.player.pos.y + 0.05,
+        fn: () => {
+          drawPerson(ctx, this.player, w.x, w.y, true);
+          if (this.player.job) {
+            const f = this.player.job.t / this.player.job.dur;
+            ctx.fillStyle = "rgba(0,0,0,.25)";
+            ctx.fillRect(w.x - 18, w.y - 54, 36, 5);
+            ctx.fillStyle = "#46c7da";
+            ctx.fillRect(w.x - 18, w.y - 54, 36 * f, 5);
+          }
+        },
+      });
+    }
+    objs.sort((a, b) => a.d - b.d).forEach((o) => o.fn());
+    ctx.restore();
+
+    // atmosphere pass (screen space)
+    const sunX = W * 0.82,
+      sunY = H * 0.06;
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    const g = ctx.createRadialGradient(sunX, sunY, 10, sunX, sunY, Math.max(W, H) * 0.7);
+    g.addColorStop(0, "rgba(255,220,150,.22)");
+    g.addColorStop(0.5, "rgba(255,190,120,.07)");
+    g.addColorStop(1, "rgba(255,180,110,0)");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+    const vg = ctx.createRadialGradient(W / 2, H * 0.5, H * 0.3, W / 2, H * 0.6, H * 0.9);
+    vg.addColorStop(0, "rgba(40,20,8,0)");
+    vg.addColorStop(1, "rgba(40,20,8,.26)");
+    ctx.fillStyle = vg;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  private localVillaOwner(x: number, y: number): string | null {
+    return this.player.villaOwned === x + "," + y ? this.player.name : null;
+  }
+}

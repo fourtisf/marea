@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Marea — Mediterranean harbor</title>
+<style>
+  :root{--gold:#c9a24a;--gold-bright:#e7c46b;--ink:#13343c;--ink-soft:#3c5a61;--cream:#f7eccb;
+    --panel:rgba(255,251,241,.95);--line:rgba(19,52,60,.14);--teal:#1fa4bd}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+  html,body{margin:0;height:100%;overflow:hidden;font-family:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink)}
+  #stage{position:fixed;inset:0;background:radial-gradient(135% 100% at 80% 2%,#ffeaa6 0%,#f9d472 22%,#f3bd49 42%,#ee9f48 60%,#df8a54 82%,#c7795c 100%)}
+  #game{position:absolute;inset:0}
+  #game canvas{display:block;cursor:grab}
+  #game canvas:active{cursor:grabbing}
+
+  .topbar{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:flex-start;
+    padding:14px 18px;pointer-events:none;z-index:6;gap:8px;flex-wrap:wrap}
+  .wordmark{font-family:Georgia,serif;font-size:21px;letter-spacing:.26em;text-transform:uppercase;color:var(--ink);
+    text-shadow:0 1px 0 rgba(255,255,255,.5)}
+  .wordmark small{display:block;font-size:9px;letter-spacing:.32em;color:var(--ink-soft);margin-top:2px;font-family:Inter,sans-serif}
+  .stats{display:flex;gap:7px;align-items:center;pointer-events:auto;flex-wrap:wrap;justify-content:flex-end}
+  .pill{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:7px 13px;display:flex;gap:7px;
+    align-items:center;box-shadow:0 6px 18px rgba(120,80,20,.18);backdrop-filter:blur(6px)}
+  .pill.btn2{cursor:pointer}
+  .pill .lab{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft)}
+  .pill .val{font-family:Georgia,serif;font-size:15px;font-weight:600}
+  .coin{width:13px;height:13px;border-radius:50%;background:linear-gradient(135deg,var(--gold-bright),var(--gold));
+    border:1px solid #a9842f;box-shadow:inset 0 1px 1px rgba(255,255,255,.6);flex:0 0 auto}
+  .vol{cursor:pointer;border:none;background:none;padding:0;display:flex;align-items:center}
+  .vol input[type=range]{width:56px;accent-color:var(--gold);margin-left:7px}
+
+  .dock{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);z-index:6;display:none;flex-direction:column;gap:8px;align-items:center}
+  .dock.show{display:flex;animation:rise .25s ease}
+  @keyframes rise{from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translate(-50%,0)}}
+  .eyebrow{font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--ink);background:var(--panel);padding:4px 12px;border-radius:999px;border:1px solid var(--line)}
+  .jobs{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+  .btn{cursor:pointer;border:none;font-family:inherit;font-size:13px;font-weight:600;color:var(--ink);background:var(--panel);
+    border:1px solid var(--line);border-radius:12px;padding:11px 15px;box-shadow:0 8px 22px rgba(120,80,20,.2);
+    transition:transform .08s;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:104px}
+  .btn:hover{transform:translateY(-2px)}
+  .btn .pay{font-family:Georgia,serif;font-size:12px;color:#8a6a1e}
+  .btn.primary{background:linear-gradient(135deg,var(--gold-bright),var(--gold));color:#3a2c08;border-color:#a9842f}
+
+  .work{position:absolute;left:50%;bottom:26px;transform:translateX(-50%);z-index:6;display:none;background:var(--panel);
+    border:1px solid var(--line);border-radius:14px;padding:12px 18px;width:300px;text-align:center;box-shadow:0 10px 26px rgba(120,80,20,.22)}
+  .work.show{display:block}.work .title{font-size:12px;color:var(--ink-soft);margin-bottom:8px}
+  .track{height:7px;background:rgba(19,52,60,.12);border-radius:99px;overflow:hidden}
+  .fill{height:100%;width:0;background:linear-gradient(90deg,var(--teal),#46c7da)}
+
+  .banner{position:absolute;left:50%;top:70px;transform:translate(-50%,-16px);z-index:8;opacity:0;pointer-events:none;
+    background:linear-gradient(135deg,#15323b,#234b54);color:#f7eccb;border:1px solid var(--gold);border-radius:14px;
+    padding:12px 22px;text-align:center;box-shadow:0 14px 40px rgba(0,0,0,.3);max-width:80vw;transition:opacity .35s,transform .35s}
+  .banner.show{opacity:1;transform:translate(-50%,0)}.banner b{color:var(--gold-bright);font-family:Georgia,serif}
+  .banner .k{font-size:9px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);display:block;margin-bottom:3px}
+
+  .toast{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%) scale(.9);z-index:9;opacity:0;pointer-events:none;text-align:center;transition:opacity .4s,transform .4s}
+  .toast.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  .toast .card{background:var(--panel);border:1px solid var(--gold);border-radius:18px;padding:20px 28px;box-shadow:0 24px 60px rgba(120,80,20,.35)}
+  .toast .k{font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);margin-bottom:6px}
+  .toast .name{font-family:Georgia,serif;font-size:23px;margin:0}.toast .worth{margin-top:6px;color:var(--ink-soft);font-size:13px}
+
+  .scrim{position:absolute;inset:0;z-index:12;background:rgba(20,38,42,.42);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;padding:20px}
+  .scrim.show{display:flex}
+  .modal{width:min(580px,94vw);max-height:86vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:20px;box-shadow:0 30px 80px rgba(0,0,0,.4)}
+  .mhead{padding:18px 22px 12px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:flex-end}
+  .mhead h2{margin:0;font-family:Georgia,serif;font-size:20px}.mhead .sub{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-soft)}
+  .tabs{display:flex;gap:4px;padding:12px 22px 0;flex-wrap:wrap}
+  .tab{cursor:pointer;border:none;background:none;font-family:inherit;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);padding:8px 4px;border-bottom:2px solid transparent}
+  .tab.active{color:var(--ink);border-color:var(--gold)}
+  .list{padding:6px 22px 20px}
+  .row{display:flex;align-items:center;gap:13px;padding:12px 4px;border-bottom:1px solid var(--line)}.row:last-child{border-bottom:none}
+  .swatch{width:40px;height:40px;border-radius:11px;flex:0 0 auto;border:1px solid rgba(0,0,0,.12)}
+  .row .meta{flex:1;min-width:0}.row .nm{font-weight:600;font-size:14px}.row .dt{font-size:11px;color:var(--ink-soft)}
+  .price{font-family:Georgia,serif;font-size:14px;color:#8a6a1e;display:flex;align-items:center;gap:5px;white-space:nowrap}
+  .act{cursor:pointer;border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 13px;font-family:inherit;font-size:12px;font-weight:600;color:var(--ink)}
+  .act.buy{background:linear-gradient(135deg,var(--gold-bright),var(--gold));color:#3a2c08;border-color:#a9842f}
+  .act.equipped{background:var(--ink);color:var(--cream);border-color:var(--ink);cursor:default}
+  .act:disabled{opacity:.4;cursor:not-allowed}.empty{padding:24px 6px;text-align:center;color:var(--ink-soft);font-size:13px}
+  .closeX{cursor:pointer;border:none;background:none;font-size:22px;color:var(--ink-soft);line-height:1;padding:4px}
+
+  .mini{position:absolute;top:62px;right:18px;z-index:5;background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:6px;box-shadow:0 8px 20px rgba(120,80,20,.2)}
+  .mini canvas{display:block;border-radius:7px;cursor:pointer;width:150px;height:150px}
+
+  .lead{position:absolute;top:230px;right:18px;z-index:5;width:206px;background:var(--panel);border:1px solid var(--line);
+    border-radius:14px;box-shadow:0 10px 24px rgba(120,80,20,.2);overflow:hidden;display:none}
+  .lead.show{display:block}
+  .lead h3{margin:0;padding:11px 14px 8px;font-family:Georgia,serif;font-size:14px;border-bottom:1px solid var(--line)}
+  .lead .lr{display:flex;justify-content:space-between;padding:6px 14px;font-size:12px}
+  .lead .lr.me{background:rgba(201,162,74,.16);font-weight:600}
+  .lead .lr .rk{color:var(--ink-soft);width:18px}.lead .lr .nm{flex:1;padding:0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lead .lr .nw{font-family:Georgia,serif;color:#8a6a1e}
+
+  .chat{position:absolute;left:18px;bottom:18px;z-index:6;width:248px}
+  .clog{display:flex;flex-direction:column;gap:4px;margin-bottom:7px;max-height:140px;overflow:hidden}
+  .clog .cm{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:5px 9px;font-size:12px;box-shadow:0 4px 12px rgba(120,80,20,.12)}
+  .clog .cm b{color:#8a6a1e}
+  .crow{display:flex;gap:6px}
+  .crow input{flex:1;min-width:0;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:8px 11px;font-family:inherit;font-size:12px;color:var(--ink);outline:none}
+  .emotes{display:flex;gap:5px;margin-top:6px}
+  .emotes button{cursor:pointer;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:5px 9px;font-family:inherit;font-size:11px;font-weight:600;color:var(--ink-soft)}
+
+  .zoom{position:absolute;right:18px;bottom:18px;z-index:6;display:flex;flex-direction:column;gap:6px;align-items:center}
+  .zbtn{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--panel);cursor:pointer;font-size:20px;font-weight:600;color:var(--ink);box-shadow:0 6px 16px rgba(120,80,20,.18)}
+  .zlabel{font-size:10px;color:var(--ink-soft);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:3px 7px}
+
+  .intro{position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+    background:radial-gradient(120% 90% at 50% 28%,rgba(249,212,114,.25),rgba(199,121,92,.5))}
+  .intro .ttl{font-family:Georgia,serif;font-size:clamp(40px,9vw,72px);letter-spacing:.28em;text-transform:uppercase;color:var(--ink);text-shadow:0 2px 0 rgba(255,255,255,.4)}
+  .intro .ln{font-size:13px;color:var(--ink-soft);max-width:430px;margin:12px 18px 0;line-height:1.6}
+  .intro input{margin-top:22px;border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:12px 16px;font-family:inherit;font-size:14px;color:var(--ink);text-align:center;width:230px;outline:none}
+  .intro .go{margin-top:14px;cursor:pointer;border:none;font-family:Georgia,serif;font-size:14px;letter-spacing:.16em;text-transform:uppercase;color:#3a2c08;
+    background:linear-gradient(135deg,var(--gold-bright),var(--gold));padding:13px 30px;border-radius:999px;border:1px solid #a9842f;box-shadow:0 12px 30px rgba(120,80,20,.3)}
+  .intro .go:disabled{opacity:.55;cursor:wait}
+  .intro .demo{margin-top:14px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);opacity:.8}
+  .intro .err{margin-top:12px;font-size:12px;color:#b04a3a;min-height:16px}
+  .intro.hide{opacity:0;pointer-events:none;transition:opacity .5s}
+  .hint{position:absolute;left:18px;top:62px;z-index:5;font-size:11px;color:var(--ink-soft);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:7px 11px;max-width:210px;line-height:1.5}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="game"></div>
+
+  <div class="topbar">
+    <div class="wordmark">Marea<small>Mediterranean harbor · golden hour</small></div>
+    <div class="stats">
+      <div class="pill"><div class="coin"></div><div class="lab">Credits</div><div class="val" id="creditsVal">40</div></div>
+      <div class="pill"><div class="lab">Net worth</div><div class="val" id="nwVal">40</div></div>
+      <div class="pill"><div class="lab">Sailing</div><div class="val" id="vehVal" style="font-size:12px">Used Tender</div></div>
+      <div class="pill btn2" id="leadBtn"><div class="lab">Leaderboard</div></div>
+      <div class="pill"><button class="vol" id="volBtn"><span id="volIcon"></span></button><input type="range" id="volSlider" min="0" max="100" value="55"></div>
+    </div>
+  </div>
+
+  <div class="hint">Click quay to walk · hold &amp; drag to steer · scroll/buttons to zoom · click minimap to travel · walk up to stations, the Dealer, berths &amp; villas-for-sale to act</div>
+
+  <div class="mini"><canvas id="mini" width="144" height="144"></canvas></div>
+  <div class="lead" id="lead"><h3>Richest in the harbor</h3><div id="leadList"></div></div>
+
+  <div class="dock" id="dock"></div>
+  <div class="work" id="work"><div class="title" id="workTitle">Working…</div><div class="track"><div class="fill" id="workFill"></div></div></div>
+  <div class="banner" id="banner"></div>
+  <div class="toast" id="toast"><div class="card"><div class="k" id="toastK">Discovery</div><div class="name" id="toastName"></div><div class="worth" id="toastWorth"></div></div></div>
+
+  <div class="chat">
+    <div class="clog" id="clog"></div>
+    <div class="crow"><input id="chatIn" maxlength="80" placeholder="Say something to the harbor…"></div>
+    <div class="emotes"><button data-e="wave">wave</button><button data-e="nice boat">nice boat</button><button data-e="gg">gg</button><button data-e="cheers">cheers</button></div>
+  </div>
+
+  <div class="zoom"><button class="zbtn" id="zoomIn">+</button><div class="zlabel" id="zoomLbl">100%</div><button class="zbtn" id="zoomOut">−</button></div>
+
+  <div class="scrim" id="scrim"><div class="modal">
+    <div class="mhead"><div><div class="sub">The Dealer</div><h2>Harbor exchange</h2></div><button class="closeX" id="closeDealer">×</button></div>
+    <div class="tabs"><button class="tab active" data-tab="buy">Vehicles</button><button class="tab" data-tab="sell">Discoveries</button><button class="tab" data-tab="estate">My estate</button></div>
+    <div class="list" id="dealerList"></div>
+  </div></div>
+
+  <div class="intro" id="intro">
+    <div class="ttl">Marea</div>
+    <div class="ln">A shared harbor at golden hour. Take honest marina work, surface rare finds, and rise — a boat, a berth, a villa on the hill the whole quay can see.</div>
+    <input id="nameIn" maxlength="14" placeholder="Your name" />
+    <button class="go" id="goBtn">Connect wallet &amp; enter</button>
+    <div class="err" id="introErr"></div>
+    <div class="demo">balance gate — holds the minimum $RIV to enter</div>
+  </div>
+</div>
+
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>

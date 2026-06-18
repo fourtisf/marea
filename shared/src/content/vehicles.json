@@ -1,0 +1,8 @@
+[
+  {"id":"tender_used","name":"Used Tender","type":"boat","price":0,"col":"#9aa7ab"},
+  {"id":"scooter_city","name":"City Scooter","type":"land","price":150,"col":"#1fa4bd"},
+  {"id":"runabout_classic","name":"Classic Runabout","type":"boat","price":600,"col":"#2b4d63"},
+  {"id":"roadster","name":"Coastal Roadster","type":"land","price":1400,"col":"#b23a2e"},
+  {"id":"cruiser_sport","name":"Sport Cruiser","type":"boat","price":2800,"col":"#f4efe2"},
+  {"id":"mega_yacht","name":"Mega Yacht","type":"boat","price":12000,"col":"#ffffff"}
+]

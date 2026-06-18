@@ -1,0 +1,22 @@
+{
+  "name": "@marea/shared",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./content/*": "./src/content/*"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node scripts/copy-content.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "genmap": "tsx scripts/genmap.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2"
+  }
+}

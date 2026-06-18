@@ -1,0 +1,6 @@
+{
+  "wash":   [{"id":"hull_clean","name":"Clean a hull","dur":6,"pay":12},
+             {"id":"deck_polish","name":"Polish the deck","dur":9,"pay":20}],
+  "fuel":   [{"id":"refuel","name":"Refuel a boat","dur":5,"pay":10}],
+  "repair": [{"id":"hull_repair","name":"Patch a hull","dur":14,"pay":38}]
+}
