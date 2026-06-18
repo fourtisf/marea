@@ -12,7 +12,6 @@ import { cartToWorld, screenToTile, TILE_PX, type ScreenPoint, type Tile } from 
 import { walkable, propAt, berthAt, pathTo, inBounds } from "../world";
 import {
   quayTile,
-  waterTile,
   drawVilla,
   drawPalm,
   drawDealerProp,
@@ -77,6 +76,7 @@ export interface EstateMarkers {
 
 export class HarborScene extends Phaser.Scene {
   private ctx!: CanvasRenderingContext2D;
+  private waterPattern: CanvasPattern | null = null;
   readonly cam: ScreenPoint = { x: 0, y: 0 };
   zoom = 1;
   zoomTarget = 1;
@@ -408,31 +408,37 @@ export class HarborScene extends Phaser.Scene {
     }
   }
 
+  // A small repeating water tile used to fill the whole sea (2x2 tiles of two
+  // shades + faint wave highlights), so the ocean looks tiled, not flat.
+  private buildWaterPattern(): void {
+    const T = TILE_PX;
+    const pc = document.createElement("canvas");
+    pc.width = T * 2;
+    pc.height = T * 2;
+    const p = pc.getContext("2d");
+    if (!p) return;
+    const shades = ["#2a9fb6", "#33b0c7"];
+    for (let j = 0; j < 2; j++)
+      for (let i = 0; i < 2; i++) {
+        p.fillStyle = shades[(i + j) % 2];
+        p.fillRect(i * T, j * T, T, T);
+      }
+    p.globalAlpha = 0.1;
+    p.fillStyle = "#dffaff";
+    p.fillRect(0, T * 0.5, T * 2, 2);
+    p.fillRect(0, T * 1.5, T * 2, 2);
+    p.globalAlpha = 1;
+    this.waterPattern = this.ctx.createPattern(pc, "repeat");
+  }
+
   // ---- rendering (top-down 2D) ----
   private draw(): void {
     const ctx = this.ctx;
     const W = this.cssW,
       H = this.cssH;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-
-    // open sea fills everything beyond the map — a living ocean (not an empty
-    // void) so zooming out reads as "the harbor sits in the sea".
-    ctx.fillStyle = "#2a9fb6";
+    ctx.fillStyle = "#2a9fb6"; // fallback base
     ctx.fillRect(0, 0, W, H);
-    ctx.save();
-    ctx.globalAlpha = 0.06;
-    ctx.fillStyle = "#dffaff";
-    const off = (this.tsec * 16) % 44;
-    for (let x = -H; x < W; x += 44) {
-      ctx.beginPath();
-      ctx.moveTo(x + off, 0);
-      ctx.lineTo(x + off + H, H);
-      ctx.lineTo(x + off + H + 16, H);
-      ctx.lineTo(x + off + 16, 0);
-      ctx.closePath();
-      ctx.fill();
-    }
-    ctx.restore();
 
     ctx.save();
     ctx.translate(W / 2, H / 2);
@@ -442,6 +448,19 @@ export class HarborScene extends Phaser.Scene {
     const T = TILE_PX;
     const hw = W / 2 / this.zoom,
       hh = H / 2 / this.zoom;
+
+    // INFINITE OCEAN: fill the whole visible world with a repeating water tile
+    // pattern (in world space, so it scrolls with the camera). The harbor's land
+    // is drawn on top — so zooming out shows endless tiled sea, never an empty
+    // background (like the dense tiled worlds in cozy top-down games).
+    if (!this.waterPattern) this.buildWaterPattern();
+    if (this.waterPattern) {
+      const drift = (this.tsec * 7) % (T * 2);
+      this.waterPattern.setTransform?.(new DOMMatrix().translateSelf(drift, drift * 0.4));
+      ctx.fillStyle = this.waterPattern;
+      ctx.fillRect(this.cam.x - hw - T, this.cam.y - hh - T, 2 * hw + 2 * T, 2 * hh + 2 * T);
+    }
+
     // visible tile range (cull)
     const cx0 = Math.max(0, Math.floor((this.cam.x - hw) / T) - 1);
     const cx1 = Math.min(MAP.grid - 1, Math.ceil((this.cam.x + hw) / T) + 1);
@@ -450,13 +469,12 @@ export class HarborScene extends Phaser.Scene {
     const vis = (wx: number, wy: number) =>
       wx >= this.cam.x - hw - T && wx <= this.cam.x + hw + T && wy >= this.cam.y - hh - T && wy <= this.cam.y + hh + T;
 
-    // ground tiles
+    // land tiles only (the ocean pattern shows through for water tiles), plus a
+    // soft shore line where quay meets water
     for (let cy = cy0; cy <= cy1; cy++) {
       for (let cx = cx0; cx <= cx1; cx++) {
-        const ox = cx * T,
-          oy = cy * T;
-        if (MAP.tiles[cy][cx] === "water") waterTile(ctx, cx, cy, ox, oy, this.tsec);
-        else quayTile(ctx, cx, cy, ox, oy);
+        if (MAP.tiles[cy][cx] !== "quay") continue;
+        quayTile(ctx, cx, cy, cx * T, cy * T);
       }
     }
 
