@@ -9,34 +9,30 @@
       <stop offset="0" stop-color="#fbeec2"/>
       <stop offset="1" stop-color="#d9b45e"/>
     </radialGradient>
-    <path id="top" d="M70 178 A100 100 0 0 1 270 178" fill="none"/>
   </defs>
 
   <circle cx="170" cy="170" r="160" fill="#102a31"/>
   <circle cx="170" cy="170" r="150" fill="none" stroke="url(#gold)" stroke-width="2.5"/>
   <circle cx="170" cy="170" r="140" fill="none" stroke="url(#gold)" stroke-width="1" opacity=".55"/>
 
-  <!-- arched name -->
-  <text fill="url(#gold)" font-size="40" letter-spacing="12" font-weight="600">
-    <textPath href="#top" startOffset="50%" text-anchor="middle">MAREA</textPath>
-  </text>
+  <!-- wordmark -->
+  <text x="170" y="118" text-anchor="middle" fill="url(#gold)" font-size="46" letter-spacing="11" font-weight="600">MAREA</text>
+  <g fill="url(#gold)">
+    <circle cx="92" cy="110" r="2"/><circle cx="248" cy="110" r="2"/>
+  </g>
 
   <!-- sun + sea emblem -->
-  <g transform="translate(170,168)">
+  <g transform="translate(170,178)">
     <circle cx="0" cy="-6" r="30" fill="url(#sun)"/>
     <g stroke="url(#gold)" stroke-width="2.4" stroke-linecap="round" fill="none">
       <path d="M-52 22 q13 -9 26 0 t26 0 t26 0 t26 0"/>
       <path d="M-46 34 q11.5 -8 23 0 t23 0 t23 0 t23 0" opacity=".7"/>
     </g>
-    <!-- little sail -->
     <path d="M0 -2 L0 -30 L17 -6 Z" fill="#102a31" stroke="url(#gold)" stroke-width="1.4"/>
   </g>
 
   <!-- base label -->
-  <text x="170" y="250" text-anchor="middle" fill="url(#gold)" font-family="Inter, system-ui, sans-serif"
-        font-size="11" letter-spacing="5" opacity=".9">MEDITERRANEAN HARBOR</text>
-  <g fill="url(#gold)">
-    <circle cx="140" cy="246" r="1.7"/><circle cx="200" cy="246" r="1.7"/>
-  </g>
-  <text x="170" y="282" text-anchor="middle" fill="url(#gold)" font-size="13" letter-spacing="6" opacity=".8">· EST · GOLDEN HOUR ·</text>
+  <text x="170" y="258" text-anchor="middle" fill="url(#gold)" font-family="Inter, system-ui, sans-serif"
+        font-size="11" letter-spacing="5" opacity=".92">MEDITERRANEAN HARBOR</text>
+  <text x="170" y="286" text-anchor="middle" fill="url(#gold)" font-size="13" letter-spacing="6" opacity=".8">· EST · GOLDEN HOUR ·</text>
 </svg>
