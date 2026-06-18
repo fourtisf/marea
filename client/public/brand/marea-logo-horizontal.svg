@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 170" width="560" height="170" font-family="Georgia, 'Times New Roman', serif">
+  <defs>
+    <radialGradient id="sky" cx="50%" cy="32%" r="80%">
+      <stop offset="0%" stop-color="#ffeaa6"/>
+      <stop offset="42%" stop-color="#f3bd49"/>
+      <stop offset="78%" stop-color="#e08a4f"/>
+      <stop offset="100%" stop-color="#c7795c"/>
+    </radialGradient>
+    <radialGradient id="sun" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fff3cf"/>
+      <stop offset="60%" stop-color="#e7c46b"/>
+      <stop offset="100%" stop-color="#c9a24a"/>
+    </radialGradient>
+    <clipPath id="roundel"><circle cx="85" cy="85" r="66"/></clipPath>
+  </defs>
+
+  <!-- roundel -->
+  <circle cx="85" cy="85" r="66" fill="url(#sky)" stroke="#c9a24a" stroke-width="3"/>
+  <g clip-path="url(#roundel)">
+    <circle cx="85" cy="74" r="26" fill="url(#sun)"/>
+    <!-- sea -->
+    <rect x="19" y="104" width="132" height="60" fill="#2cb4cc"/>
+    <rect x="19" y="104" width="132" height="60" fill="#1fa4bd" opacity="0.35"/>
+    <!-- sun reflection -->
+    <rect x="74" y="104" width="22" height="60" fill="#ffe5a6" opacity="0.5"/>
+    <!-- wave lines -->
+    <path d="M19 118 q14 -7 28 0 t28 0 t28 0 t28 0 t28 0" fill="none" stroke="#eafbff" stroke-width="2.4" opacity="0.8" stroke-linecap="round"/>
+    <path d="M19 132 q14 -7 28 0 t28 0 t28 0 t28 0 t28 0" fill="none" stroke="#eafbff" stroke-width="2.2" opacity="0.55" stroke-linecap="round"/>
+    <!-- little sailboat -->
+    <path d="M96 101 l16 0 -4 8 -8 0 z" fill="#15323b"/>
+    <path d="M104 101 l0 -20 13 18 z" fill="#f7eccb" stroke="#c9a24a" stroke-width="1"/>
+  </g>
+
+  <!-- wordmark -->
+  <text x="184" y="98" font-size="58" letter-spacing="14" fill="#13343c">MAREA</text>
+  <text x="186" y="125" font-size="13" letter-spacing="6.5" fill="#3c5a61" font-family="Inter, system-ui, sans-serif">MEDITERRANEAN HARBOR</text>
+</svg>

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 150" width="520" height="150" font-family="Georgia, 'Times New Roman', serif">
+  <rect width="520" height="150" fill="#f7eccb"/>
+  <text x="260" y="84" text-anchor="middle" font-size="66" letter-spacing="18" fill="#13343c">MAREA</text>
+  <!-- golden sun dot over the A could be added; subtle wave underline -->
+  <path d="M150 104 q27.5 -12 55 0 t55 0 t55 0 t55 0" fill="none" stroke="#c9a24a" stroke-width="3.5" stroke-linecap="round"/>
+  <circle cx="260" cy="30" r="9" fill="#e7c46b" stroke="#c9a24a" stroke-width="1.5"/>
+  <text x="260" y="126" text-anchor="middle" font-size="12.5" letter-spacing="8" fill="#3c5a61" font-family="Inter, system-ui, sans-serif">GOLDEN HOUR · ON SOLANA</text>
+</svg>
