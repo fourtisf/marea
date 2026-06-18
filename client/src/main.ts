@@ -121,7 +121,7 @@ function setupIntro(net: NetClient, chat: { addLine: (from: string, text: string
     cv.width = 44;
     cv.height = 52;
     const c = cv.getContext("2d");
-    if (c) drawPerson(c, { name: "", equipped: "tender_used", look: l.id, bubble: null }, 22, 42, false, true);
+    if (c) drawPerson(c, { name: "", equipped: "tender_used", look: l.id, bubble: null }, 22, 48, false, true);
     btn.appendChild(cv);
     btn.onclick = () => {
       selectedLook = l.id;

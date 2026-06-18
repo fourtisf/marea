@@ -26,7 +26,7 @@ import {
   drawPerson,
 } from "../render/draw";
 
-const ZMIN = 0.28; // zoom out far enough to see (nearly) the whole map
+const ZMIN = 0.4; // keep the harbor a usable size when zoomed out
 const ZMAX = 2.2;
 
 export interface LocalPlayer {
@@ -415,9 +415,24 @@ export class HarborScene extends Phaser.Scene {
       H = this.cssH;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
 
-    // open sea fills everything beyond the map (no empty void when zoomed out)
-    ctx.fillStyle = "#1c8aa0";
+    // open sea fills everything beyond the map — a living ocean (not an empty
+    // void) so zooming out reads as "the harbor sits in the sea".
+    ctx.fillStyle = "#2a9fb6";
     ctx.fillRect(0, 0, W, H);
+    ctx.save();
+    ctx.globalAlpha = 0.06;
+    ctx.fillStyle = "#dffaff";
+    const off = (this.tsec * 16) % 44;
+    for (let x = -H; x < W; x += 44) {
+      ctx.beginPath();
+      ctx.moveTo(x + off, 0);
+      ctx.lineTo(x + off + H, H);
+      ctx.lineTo(x + off + H + 16, H);
+      ctx.lineTo(x + off + 16, 0);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.restore();
 
     ctx.save();
     ctx.translate(W / 2, H / 2);
@@ -520,9 +535,9 @@ export class HarborScene extends Phaser.Scene {
           if (this.player.job) {
             const f = this.player.job.t / this.player.job.dur;
             ctx.fillStyle = "rgba(0,0,0,.25)";
-            ctx.fillRect(w.x - 18, w.y - 26, 36, 5);
+            ctx.fillRect(w.x - 18, w.y - 48, 36, 5);
             ctx.fillStyle = "#46c7da";
-            ctx.fillRect(w.x - 18, w.y - 26, 36 * f, 5);
+            ctx.fillRect(w.x - 18, w.y - 48, 36 * f, 5);
           }
         },
       });

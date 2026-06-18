@@ -255,72 +255,101 @@ export interface PersonDraw {
   bubble?: { text: string } | null;
 }
 
+// Drawn as a small UPRIGHT person standing on the tile (feet at cx,cy) so the
+// body reads like a human even though the map is top-down.
 export function drawPerson(ctx: Ctx, ent: PersonDraw, cx: number, cy: number, you: boolean, bare = false) {
   const look = ent.look ? lookById(ent.look) : undefined;
-  const body = look?.body ?? (you ? "#15323b" : "#5a6e74");
+  const body = look?.body ?? (you ? "#2b4d63" : "#5a6e74");
   const skin = look?.skin ?? "#f0c9a0";
   const hair = look?.hair ?? "#3a2a1a";
   const style = look?.hairStyle ?? "short";
 
   if (!bare) {
-    softShadow(ctx, cx, cy + 2, 6);
-    vehBadge(ctx, cx + 13, cy, ent.equipped);
+    ctx.save();
+    ctx.globalAlpha = 0.18;
+    ctx.fillStyle = "#3a2410";
+    ctx.beginPath();
+    ctx.ellipse(cx, cy + 1, 8, 3.2, 0, 0, 7);
+    ctx.fill();
+    ctx.restore();
+    vehBadge(ctx, cx + 14, cy - 3, ent.equipped);
   }
 
-  // body (shoulders, seen from above)
+  // legs
+  ctx.fillStyle = "#3a3f44";
+  ctx.fillRect(cx - 3.4, cy - 6, 3, 6);
+  ctx.fillRect(cx + 0.4, cy - 6, 3, 6);
+
+  // long hair behind the shoulders
+  if (style === "long") {
+    ctx.fillStyle = hair;
+    ctx.beginPath();
+    ctx.roundRect(cx - 6, cy - 24, 3, 13, 1.5);
+    ctx.roundRect(cx + 3, cy - 24, 3, 13, 1.5);
+    ctx.fill();
+  }
+
+  // arms + torso (clothes)
   ctx.fillStyle = body;
   ctx.beginPath();
-  ctx.arc(cx, cy, 7, 0, 7);
+  ctx.roundRect(cx - 7, cy - 19, 2.6, 11, 1.3);
+  ctx.roundRect(cx + 4.4, cy - 19, 2.6, 11, 1.3);
   ctx.fill();
-
-  // hair ring (behind head) — long/bun extend further
-  if (style !== "bald") {
-    ctx.fillStyle = hair;
-    const hr = style === "long" ? 6.4 : 5.6;
-    ctx.beginPath();
-    ctx.arc(cx, cy - 1, hr, 0, 7);
-    ctx.fill();
-    if (style === "bun") {
-      ctx.beginPath();
-      ctx.arc(cx, cy - 6.5, 2.4, 0, 7);
-      ctx.fill();
-    }
-  }
+  ctx.beginPath();
+  ctx.roundRect(cx - 5, cy - 20, 10, 15, 4);
+  ctx.fill();
 
   // head
   ctx.fillStyle = skin;
   ctx.beginPath();
-  ctx.arc(cx, cy - 0.5, 4.6, 0, 7);
+  ctx.arc(cx, cy - 24, 5, 0, 7);
   ctx.fill();
 
-  // face — eyes toward the south (camera)
+  // hair cap
+  if (style !== "bald") {
+    ctx.fillStyle = hair;
+    ctx.beginPath();
+    ctx.arc(cx, cy - 24, 5.4, Math.PI, Math.PI * 2);
+    ctx.closePath();
+    ctx.fill();
+    if (style === "bun") {
+      ctx.beginPath();
+      ctx.arc(cx, cy - 30, 2.4, 0, 7);
+      ctx.fill();
+    }
+  }
+
+  // face — eyes
   ctx.fillStyle = "#2a1a12";
   ctx.beginPath();
-  ctx.arc(cx - 1.8, cy + 1, 0.95, 0, 7);
-  ctx.arc(cx + 1.8, cy + 1, 0.95, 0, 7);
+  ctx.arc(cx - 1.9, cy - 23, 0.95, 0, 7);
+  ctx.arc(cx + 1.9, cy - 23, 0.95, 0, 7);
   ctx.fill();
 
+  // hat over hair
   if (look?.hat) {
     ctx.fillStyle = look.hat;
     ctx.beginPath();
-    ctx.arc(cx, cy - 1, 5.2, Math.PI, Math.PI * 2);
-    ctx.closePath();
+    ctx.ellipse(cx, cy - 27, 8, 2.6, 0, 0, 7);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.roundRect(cx - 4.5, cy - 32, 9, 6, 2);
     ctx.fill();
   }
 
   if (bare) return;
 
-  nameplate(ctx, ent.name, cx, cy - 9, you ? "#f7eccb" : "#15323b", you ? "rgba(21,50,59,.92)" : "rgba(255,255,255,.85)");
+  nameplate(ctx, ent.name, cx, cy - 35, you ? "#f7eccb" : "#15323b", you ? "rgba(21,50,59,.92)" : "rgba(255,255,255,.85)");
 
   if (ent.bubble) {
     ctx.font = "600 11px Inter";
+    ctx.textAlign = "center";
     const bw = ctx.measureText(ent.bubble.text).width + 16;
     ctx.fillStyle = "rgba(255,251,241,.97)";
     ctx.beginPath();
-    ctx.roundRect(cx - bw / 2, cy - 32, bw, 18, 9);
+    ctx.roundRect(cx - bw / 2, cy - 54, bw, 18, 9);
     ctx.fill();
     ctx.fillStyle = "#15323b";
-    ctx.textAlign = "center";
-    ctx.fillText(ent.bubble.text, cx, cy - 19);
+    ctx.fillText(ent.bubble.text, cx, cy - 41);
   }
 }
