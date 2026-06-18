@@ -74,6 +74,10 @@ game.events.once(Phaser.Core.Events.READY, () => {
 
   setupVolume();
   setupIntro(net, chat);
+
+  // CA pill — contract address coming soon
+  const caPill = document.getElementById("caPill");
+  if (caPill) caPill.addEventListener("click", () => toast("Contract address — coming soon", "$RIV", "Stay tuned · @playmarea"));
 });
 
 function setupVolume(): void {

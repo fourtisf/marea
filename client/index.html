@@ -41,6 +41,8 @@
   .pill{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:7px 13px;display:flex;gap:7px;
     align-items:center;box-shadow:0 6px 18px rgba(120,80,20,.18);backdrop-filter:blur(6px)}
   .pill.btn2{cursor:pointer}
+  .pill.link2{cursor:pointer;padding:8px 12px;color:var(--ink);text-decoration:none}
+  .pill.link2 svg{width:15px;height:15px;fill:currentColor;display:block}
   .pill .lab{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft)}
   .pill .val{font-family:Georgia,serif;font-size:15px;font-weight:600}
   .coin{width:13px;height:13px;border-radius:50%;background:linear-gradient(135deg,var(--gold-bright),var(--gold));
@@ -141,6 +143,14 @@
   .swatch-look.sel{border-color:var(--gold)}
   .swatch-look canvas{display:block}
   .intro .demo{margin-top:14px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);opacity:.8}
+  .social{display:flex;gap:9px;flex-wrap:wrap;justify-content:center;margin-top:16px}
+  .sbtn{display:inline-flex;align-items:center;gap:7px;cursor:pointer;text-decoration:none;font-family:Inter,system-ui,sans-serif;
+    font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink);
+    background:rgba(255,251,241,.92);border:1px solid var(--line);border-radius:999px;padding:9px 15px;
+    box-shadow:0 6px 16px rgba(120,80,20,.18);transition:transform .08s}
+  .sbtn:hover{transform:translateY(-2px)}
+  .sbtn svg{width:15px;height:15px;fill:currentColor;flex:0 0 auto}
+  .sbtn.ca{background:linear-gradient(135deg,var(--gold-bright),var(--gold));color:#3a2c08;border-color:#a9842f}
   .intro .err{margin-top:12px;font-size:12px;color:#b04a3a;min-height:16px}
   .intro.hide{opacity:0;pointer-events:none;transition:opacity .5s}
   .hint{position:absolute;left:18px;top:62px;z-index:5;font-size:11px;color:var(--ink-soft);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:7px 11px;max-width:210px;line-height:1.5}
@@ -167,6 +177,8 @@
       <div class="pill"><div class="lab">Net worth</div><div class="val" id="nwVal">40</div></div>
       <div class="pill"><div class="lab">Sailing</div><div class="val" id="vehVal" style="font-size:12px">Used Tender</div></div>
       <div class="pill btn2" id="leadBtn"><div class="lab">Leaderboard</div></div>
+      <a class="pill link2" href="https://x.com/playmarea" target="_blank" rel="noopener" title="Follow on X" aria-label="X"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.9 2H22l-7.6 8.7L23 22h-6.9l-5.4-7-6.2 7H1.4l8.1-9.3L1 2h7l4.9 6.4L18.9 2Zm-1.2 18h1.9L7.4 4H5.4l12.3 16Z"/></svg></a>
+      <a class="pill link2" href="https://t.me/playmarea" target="_blank" rel="noopener" title="Telegram" aria-label="Telegram"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.9 4.3 18.7 19.4c-.2 1-.9 1.3-1.8.8l-4.9-3.6-2.4 2.3c-.3.3-.5.5-1 .5l.3-5 9.1-8.2c.4-.4-.1-.6-.6-.2L6.4 13.2l-4.8-1.5c-1-.3-1-1 .2-1.5l18.7-7.2c.9-.3 1.6.2 1.4 1.3Z"/></svg></a>
       <div class="pill"><button class="vol" id="volBtn"><span id="volIcon"></span></button><input type="range" id="volSlider" min="0" max="100" value="55"></div>
     </div>
   </div>
@@ -205,6 +217,17 @@
     <button class="go" id="goBtn">Connect wallet &amp; enter</button>
     <div class="err" id="introErr"></div>
     <div class="demo">balance gate — holds the minimum $RIV to enter</div>
+    <div class="social">
+      <a class="sbtn" href="https://x.com/playmarea" target="_blank" rel="noopener" aria-label="X">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.9 2H22l-7.6 8.7L23 22h-6.9l-5.4-7-6.2 7H1.4l8.1-9.3L1 2h7l4.9 6.4L18.9 2Zm-1.2 18h1.9L7.4 4H5.4l12.3 16Z"/></svg>
+        <span>Follow on X</span>
+      </a>
+      <a class="sbtn" href="https://t.me/playmarea" target="_blank" rel="noopener" aria-label="Telegram">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.9 4.3 18.7 19.4c-.2 1-.9 1.3-1.8.8l-4.9-3.6-2.4 2.3c-.3.3-.5.5-1 .5l.3-5 9.1-8.2c.4-.4-.1-.6-.6-.2L6.4 13.2l-4.8-1.5c-1-.3-1-1 .2-1.5l18.7-7.2c.9-.3 1.6.2 1.4 1.3Z"/></svg>
+        <span>Telegram</span>
+      </a>
+      <button class="sbtn ca" id="caPill" title="Contract address — coming soon">CA: COMING SOON</button>
+    </div>
   </div>
 </div>
 
