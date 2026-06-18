@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <defs>
+    <linearGradient id="bsky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffe9ad"/>
+      <stop offset=".34" stop-color="#f8cb60"/>
+      <stop offset=".60" stop-color="#f0a24d"/>
+      <stop offset="1" stop-color="#dd8050"/>
+    </linearGradient>
+    <linearGradient id="bsea" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#39b2c8"/>
+      <stop offset="1" stop-color="#19809a"/>
+    </linearGradient>
+    <radialGradient id="bsun" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#fff5d4"/>
+      <stop offset="42%" stop-color="#ffd277"/>
+      <stop offset="100%" stop-color="#ffd277" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1920" height="1080" fill="url(#bsky)"/>
+
+  <!-- sun -->
+  <circle cx="1290" cy="430" r="430" fill="url(#bsun)"/>
+  <circle cx="1290" cy="430" r="150" fill="#fff0bf" opacity=".9"/>
+
+  <!-- far hill (lighter, hazy) -->
+  <path d="M0 660 q260 -70 520 -44 q300 26 600 -20 q360 -50 800 -20 V1080 H0 Z" fill="#e3925a" opacity=".55"/>
+
+  <!-- near hill with villas + palms -->
+  <path d="M0 700 q200 -54 420 -36 q260 22 520 -16 q320 -44 640 -10 q200 24 340 -16 V1080 H0 Z" fill="#c46a3f"/>
+  <g fill="#a8512c">
+    <g transform="translate(180,628)"><rect x="-22" y="0" width="44" height="52"/><path d="M-28 0 L0 -28 L28 0 Z"/></g>
+    <g transform="translate(330,656)"><rect x="-18" y="0" width="36" height="44"/><path d="M-24 0 L0 -24 L24 0 Z"/></g>
+    <g transform="translate(470,640)"><rect x="-20" y="0" width="40" height="48"/><path d="M-26 0 L0 -26 L26 0 Z"/></g>
+    <g transform="translate(1500,648)"><rect x="-20" y="0" width="40" height="48"/><path d="M-26 0 L0 -26 L26 0 Z"/></g>
+    <g transform="translate(1660,672)"><rect x="-16" y="0" width="32" height="40"/><path d="M-22 0 L0 -22 L22 0 Z"/></g>
+  </g>
+  <g stroke="#9c4a28" stroke-width="7" fill="none" stroke-linecap="round">
+    <path d="M620 700 q7 -46 0 -76"/><path d="M1300 706 q-7 -48 0 -80"/>
+  </g>
+  <g fill="#8c3f22">
+    <g transform="translate(620,620)"><path d="M0 0 q-32 -18 -50 -4 q24 -4 50 4"/><path d="M0 0 q32 -18 50 -4 q-24 -4 -50 4"/><path d="M0 0 q-14 -32 -40 -36 q22 10 40 36"/><path d="M0 0 q14 -32 40 -36 q-22 10 -40 36"/></g>
+    <g transform="translate(1300,622)"><path d="M0 0 q-32 -18 -50 -4 q24 -4 50 4"/><path d="M0 0 q32 -18 50 -4 q-24 -4 -50 4"/><path d="M0 0 q-14 -32 -40 -36 q22 10 40 36"/><path d="M0 0 q14 -32 40 -36 q-22 10 -40 36"/></g>
+  </g>
+
+  <!-- sea -->
+  <rect y="712" width="1920" height="368" fill="url(#bsea)"/>
+  <rect x="1200" y="712" width="180" height="368" fill="#ffe5a6" opacity=".26"/>
+  <g stroke="#dffaff" stroke-width="3.4" fill="none" opacity=".5" stroke-linecap="round">
+    <path d="M120 800 q44 -14 88 0 t88 0 t88 0"/>
+    <path d="M1380 860 q44 -14 88 0 t88 0"/>
+    <path d="M460 940 q44 -14 88 0 t88 0 t88 0"/>
+  </g>
+  <!-- boats -->
+  <g fill="#0f2930">
+    <g transform="translate(760,790)"><path d="M-60 10 L60 10 L44 34 L-46 34 Z"/><rect x="-26" y="-10" width="52" height="20" rx="3"/><rect x="-3" y="-40" width="4" height="30"/></g>
+    <g transform="translate(1180,910) scale(.7)"><path d="M-60 10 L60 10 L44 34 L-46 34 Z"/><rect x="-26" y="-10" width="52" height="20" rx="3"/></g>
+  </g>
+
+  <!-- soft golden vignette -->
+  <rect width="1920" height="1080" fill="url(#bsun)" opacity="0"/>
+</svg>
