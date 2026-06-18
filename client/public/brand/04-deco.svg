@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 280" width="560" height="280" font-family="Georgia, 'Times New Roman', serif">
+  <defs>
+    <linearGradient id="g4" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f6e2a4"/>
+      <stop offset="1" stop-color="#c19a3c"/>
+    </linearGradient>
+  </defs>
+  <rect width="560" height="280" fill="#0f2930"/>
+  <rect x="14" y="14" width="532" height="252" fill="none" stroke="url(#g4)" stroke-width="1.4" opacity=".7"/>
+
+  <!-- art-deco sunburst over a horizon -->
+  <g transform="translate(280,118)">
+    <g stroke="url(#g4)" stroke-width="2.2" stroke-linecap="round">
+      <line x1="0" y1="0" x2="0" y2="-58"/>
+      <line x1="0" y1="0" x2="20" y2="-54"/>
+      <line x1="0" y1="0" x2="-20" y2="-54"/>
+      <line x1="0" y1="0" x2="39" y2="-43"/>
+      <line x1="0" y1="0" x2="-39" y2="-43"/>
+      <line x1="0" y1="0" x2="54" y2="-22"/>
+      <line x1="0" y1="0" x2="-54" y2="-22"/>
+    </g>
+    <path d="M-60 0 A60 60 0 0 1 60 0 Z" fill="#0f2930"/>
+    <circle cx="0" cy="0" r="20" fill="url(#g4)"/>
+    <!-- chevron waves -->
+    <g stroke="url(#g4)" stroke-width="2.4" fill="none" stroke-linecap="round">
+      <path d="M-58 16 l12 8 12 -8 12 8 12 -8 12 8 12 -8 12 8 12 -8"/>
+      <path d="M-46 30 l12 8 12 -8 12 8 12 -8 12 8 12 -8 12 8" opacity=".7"/>
+    </g>
+  </g>
+
+  <text x="280" y="212" text-anchor="middle" font-size="50" letter-spacing="22" fill="url(#g4)" font-weight="600">MAREA</text>
+  <text x="280" y="240" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="10.5" letter-spacing="7" fill="#cdbb8e">THE LUXURY HARBOR</text>
+</svg>
