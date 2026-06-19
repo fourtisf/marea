@@ -9,6 +9,8 @@ client/dist/
 server/dist/
 shared/dist/
 prisma/migrations/dev.db*
+data/
+*.json.tmp
 .vite/
 coverage/
 *.log

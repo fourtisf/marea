@@ -6,7 +6,8 @@ import express from "express";
 import { Server } from "@colyseus/core";
 import { WebSocketTransport } from "@colyseus/ws-transport";
 import { HarborRoom } from "./rooms/HarborRoom.js";
-import { MemoryRepo } from "./db/repo.js";
+import { MemoryRepo, type Repo } from "./db/repo.js";
+import { FileRepo } from "./db/fileRepo.js";
 import { loadGateConfig } from "./solana/gate.js";
 
 const PORT = Number(process.env.PORT ?? "2567");
@@ -43,8 +44,18 @@ const gameServer = new Server({
   transport: new WebSocketTransport({ server: httpServer }),
 });
 
-// Shared singletons handed to every room instance.
-const repo = new MemoryRepo();
+// Shared singletons handed to every room instance. Player data is persisted to
+// a JSON file by default (survives restarts/deploys); set MAREA_DATA_FILE to
+// relocate it. Falls back to in-memory only if a repo can't be created.
+const dataFile = process.env.MAREA_DATA_FILE ?? resolve(process.cwd(), "data/marea.json");
+let repo: Repo;
+try {
+  repo = new FileRepo(dataFile);
+  console.log(`Persistence: file repo at ${dataFile}`);
+} catch (e) {
+  console.error("Persistence: file repo unavailable, using in-memory (data will NOT survive restarts).", e);
+  repo = new MemoryRepo();
+}
 const gateCfg = loadGateConfig(process.env);
 
 gameServer.define("harbor", HarborRoom, { repo, gateCfg, stats });
