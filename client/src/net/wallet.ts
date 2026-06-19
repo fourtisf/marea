@@ -41,3 +41,18 @@ export async function connectWallet(wallet: Wallet): Promise<string> {
   if (!account) throw new Error("No account was authorized.");
   return account.address; // base58 public key
 }
+
+// Silent reconnect for returning players: if the wallet was previously
+// authorized, this resolves to its public key WITHOUT a popup. Returns null if
+// the wallet isn't pre-authorized (so we fall back to the manual connect UI).
+export async function silentConnect(wallet: Wallet): Promise<string | null> {
+  const feature = wallet.features[StandardConnect] as StandardConnectFeature[typeof StandardConnect] | undefined;
+  if (!feature) return null;
+  try {
+    const { accounts } = await feature.connect({ silent: true });
+    const account = accounts[0] ?? wallet.accounts[0];
+    return account ? account.address : null;
+  } catch {
+    return null;
+  }
+}
