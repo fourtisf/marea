@@ -12,6 +12,7 @@ import { cartToWorld, screenToTile, TILE_PX, type ScreenPoint, type Tile } from 
 import { walkable, propAt, berthAt, pathTo, inBounds } from "../world";
 import {
   quayTile,
+  waterTile,
   drawVilla,
   drawPalm,
   drawDealerProp,
@@ -76,7 +77,7 @@ export interface EstateMarkers {
 
 export class HarborScene extends Phaser.Scene {
   private ctx!: CanvasRenderingContext2D;
-  private waterPattern: CanvasPattern | null = null;
+  private groundPattern: CanvasPattern | null = null;
   readonly cam: ScreenPoint = { x: 0, y: 0 };
   zoom = 1;
   zoomTarget = 1;
@@ -410,27 +411,24 @@ export class HarborScene extends Phaser.Scene {
     }
   }
 
-  // A small repeating water tile used to fill the whole sea (2x2 tiles of two
-  // shades + faint wave highlights), so the ocean looks tiled, not flat.
-  private buildWaterPattern(): void {
+  // A repeating warm-ground tile (2x2 checker of two sand shades) used to fill
+  // the whole world background, so zooming out shows a big, full harbour — never
+  // an empty blue void. It aligns with the in-grid quay checker so the playable
+  // land blends seamlessly into the surrounding ground.
+  private buildGroundPattern(): void {
     const T = TILE_PX;
     const pc = document.createElement("canvas");
     pc.width = T * 2;
     pc.height = T * 2;
     const p = pc.getContext("2d");
     if (!p) return;
-    const shades = ["#2a9fb6", "#33b0c7"];
+    const shades = ["#e9d6a4", "#e2cd98"];
     for (let j = 0; j < 2; j++)
       for (let i = 0; i < 2; i++) {
         p.fillStyle = shades[(i + j) % 2];
         p.fillRect(i * T, j * T, T, T);
       }
-    p.globalAlpha = 0.1;
-    p.fillStyle = "#dffaff";
-    p.fillRect(0, T * 0.5, T * 2, 2);
-    p.fillRect(0, T * 1.5, T * 2, 2);
-    p.globalAlpha = 1;
-    this.waterPattern = this.ctx.createPattern(pc, "repeat");
+    this.groundPattern = this.ctx.createPattern(pc, "repeat");
   }
 
   // ---- rendering (top-down 2D) ----
@@ -439,7 +437,7 @@ export class HarborScene extends Phaser.Scene {
     const W = this.cssW,
       H = this.cssH;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.fillStyle = "#2a9fb6"; // fallback base
+    ctx.fillStyle = "#e2cd98"; // fallback base (warm ground, never blue)
     ctx.fillRect(0, 0, W, H);
 
     ctx.save();
@@ -451,15 +449,13 @@ export class HarborScene extends Phaser.Scene {
     const hw = W / 2 / this.zoom,
       hh = H / 2 / this.zoom;
 
-    // INFINITE OCEAN: fill the whole visible world with a repeating water tile
-    // pattern (in world space, so it scrolls with the camera). The harbor's land
-    // is drawn on top — so zooming out shows endless tiled sea, never an empty
-    // background (like the dense tiled worlds in cozy top-down games).
-    if (!this.waterPattern) this.buildWaterPattern();
-    if (this.waterPattern) {
-      const drift = (this.tsec * 7) % (T * 2);
-      this.waterPattern.setTransform?.(new DOMMatrix().translateSelf(drift, drift * 0.4));
-      ctx.fillStyle = this.waterPattern;
+    // INFINITE GROUND: fill the whole visible world with a repeating warm-ground
+    // tile (in world space, so it scrolls with the camera). The harbour land and
+    // marina are drawn on top — so zooming out shows a big, full tiled world,
+    // never an empty blue void (like the dense top-down worlds in cozy games).
+    if (!this.groundPattern) this.buildGroundPattern();
+    if (this.groundPattern) {
+      ctx.fillStyle = this.groundPattern;
       ctx.fillRect(this.cam.x - hw - T, this.cam.y - hh - T, 2 * hw + 2 * T, 2 * hh + 2 * T);
     }
 
@@ -471,12 +467,12 @@ export class HarborScene extends Phaser.Scene {
     const vis = (wx: number, wy: number) =>
       wx >= this.cam.x - hw - T && wx <= this.cam.x + hw + T && wy >= this.cam.y - hh - T && wy <= this.cam.y + hh + T;
 
-    // land tiles only (the ocean pattern shows through for water tiles), plus a
-    // soft shore line where quay meets water
+    // draw every visible grid tile: quay (land) over the ground background, and
+    // the marina water tiles explicitly as sea (the only blue in the scene).
     for (let cy = cy0; cy <= cy1; cy++) {
       for (let cx = cx0; cx <= cx1; cx++) {
-        if (MAP.tiles[cy][cx] !== "quay") continue;
-        quayTile(ctx, cx, cy, cx * T, cy * T);
+        if (MAP.tiles[cy][cx] === "water") waterTile(ctx, cx, cy, cx * T, cy * T, this.tsec);
+        else quayTile(ctx, cx, cy, cx * T, cy * T);
       }
     }
 

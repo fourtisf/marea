@@ -30,7 +30,9 @@ const rPick = <T>(a: T[]): T => a[ri(a.length)];
 
 // ---------- tiles ----------
 const tiles: Tile[][] = [];
-const coast = (x: number) => 40 + Math.round(Math.sin(x * 0.42) * 4);
+// Land-dominant coastline: most of the grid is walkable quay (a big, full
+// harbour), with the sea pushed out to the bottom-right corner as a marina.
+const coast = (x: number) => 73 + Math.round(Math.sin(x * 0.3) * 5);
 for (let y = 0; y < GRID; y++) {
   tiles[y] = [];
   for (let x = 0; x < GRID; x++) tiles[y][x] = x + y >= coast(x) ? "water" : "quay";
@@ -81,10 +83,11 @@ function buildPier(bx: number, by: number, len: number) {
     });
   }
 }
-buildPier(20, 22, 7);
-buildPier(28, 18, 7);
-buildPier(15, 28, 6);
-buildPier(33, 14, 6);
+// piers sit along the new coast (≈ x+y 73) so berths land on the marina water
+buildPier(40, 30, 9);
+buildPier(32, 38, 9);
+buildPier(46, 24, 8);
+buildPier(26, 44, 7);
 
 place({ x: 24, y: 18, kind: "dealer" });
 const SPAWN = { x: 22, y: 20 };
@@ -126,6 +129,17 @@ for (let y = 0; y < GRID; y++)
         price: 1500 + ri(7) * 900,
       });
     }
+  }
+
+// scattered palm groves across the land so the harbor reads as a big, full
+// world when zoomed out (never an empty plain). Skips the central plaza/spawn.
+for (let y = 0; y < GRID; y++)
+  for (let x = 0; x < GRID; x++) {
+    if (tiles[y][x] !== "quay" || isOcc(x, y)) continue;
+    const s = x + y;
+    if (s < 6 || s > coast(x) - 2) continue;
+    if (Math.abs(x - SPAWN.x) < 4 && Math.abs(y - SPAWN.y) < 4) continue;
+    if (rng() < 0.08) place({ x, y, kind: "palm" });
   }
 
 // promenade life: cafes, lamps, cars, stalls, planters along the waterfront band
