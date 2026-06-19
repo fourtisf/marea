@@ -2,7 +2,9 @@
 // just an SPL token balance read over RPC. Build/test on devnet first; swap to
 // the mainnet mint at launch via env only.
 //
-// Phase 1 ships the dev-open path so the harbor is playable without a wallet.
+// A connected Solana wallet is ALWAYS mandatory — it is the player's identity.
+// `devOpen` (and an unconfigured mint) only relaxes the $RIV balance check, so
+// the harbor stays playable before launch; it never lets a wallet-less client in.
 // Phase 6 fills in the real `gill` balance read (the `readSplBalance` stub).
 
 export interface GateConfig {
@@ -42,11 +44,14 @@ export function isLikelySolanaAddress(s: string): boolean {
 }
 
 export async function checkGate(cfg: GateConfig, wallet: string): Promise<GateResult> {
-  if (cfg.devOpen) return { ok: true };
-  // wallet is mandatory to play
+  // A connected wallet is mandatory regardless of the token gate — no guest entry.
   if (!wallet) return { ok: false, reason: "Connect a Solana wallet to enter." };
   if (!isLikelySolanaAddress(wallet)) return { ok: false, reason: "That doesn't look like a valid wallet address." };
-  if (!cfg.mint) return { ok: true }; // wallet connected; $RIV token gate not configured yet
+
+  // The $RIV balance check is the optional part: dev-open or an unconfigured mint
+  // lets a connected wallet in without holding the token (pre-launch).
+  if (cfg.devOpen) return { ok: true };
+  if (!cfg.mint) return { ok: true };
   if (!cfg.rpcUrl) {
     return { ok: false, reason: "Access gate misconfigured: set SOLANA_RPC_URL." };
   }

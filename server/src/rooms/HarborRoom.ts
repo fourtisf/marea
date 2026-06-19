@@ -126,9 +126,8 @@ export class HarborRoom extends Room<HarborState> {
     const gate = await checkGate(this.gateCfg, rawWallet);
     if (!gate.ok) throw new Error(gate.reason ?? "Access denied.");
 
-    // a connected wallet is the identity; only fall back to a guest id when the
-    // dev-open gate is active (local testing without a wallet extension)
-    const wallet = rawWallet || `guest:${client.sessionId}`;
+    // the gate guarantees a valid connected wallet — it is the player's identity
+    const wallet = rawWallet;
     this.repo.markSeen(wallet);
 
     let rec = await this.repo.load(wallet);

@@ -52,8 +52,11 @@ gameServer.define("harbor", HarborRoom, { repo, gateCfg, stats });
 gameServer
   .listen(PORT)
   .then(() => {
-    const gate = gateCfg.devOpen || !gateCfg.mint ? "open (dev)" : `gated (≥${gateCfg.min} $RIV on ${gateCfg.network})`;
-    console.log(`Marea server listening on :${PORT} — access ${gate}`);
+    const gate =
+      gateCfg.devOpen || !gateCfg.mint
+        ? "wallet required (no $RIV gate)"
+        : `wallet required + ≥${gateCfg.min} $RIV on ${gateCfg.network}`;
+    console.log(`Marea server listening on :${PORT} — access: ${gate}`);
   })
   .catch((err: unknown) => {
     console.error("Failed to start Marea server:", err);
