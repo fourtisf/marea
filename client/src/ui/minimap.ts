@@ -10,6 +10,9 @@ export function setupMinimap(scene: HarborScene): void {
   const G = MAP.grid;
   const MS = mini.width / G;
 
+  // Bake EVERYTHING static once: tiles, villa roofs, and the POI markers
+  // (dealer, stations, for-sale villas). These never move, so re-scanning all
+  // props every frame was pure waste — only players/berths change per frame.
   const base = document.createElement("canvas");
   base.width = mini.width;
   base.height = mini.height;
@@ -21,8 +24,14 @@ export function setupMinimap(scene: HarborScene): void {
     }
   for (const p of MAP.props) {
     if (p.kind === "villa") {
-      bctx.fillStyle = p.roof;
+      bctx.fillStyle = p.forSale ? "#e7c46b" : p.roof;
       bctx.fillRect(p.x * MS, p.y * MS, Math.ceil(MS) + 1, Math.ceil(MS) + 1);
+    } else if (p.kind === "dealer") {
+      bctx.fillStyle = "#15323b";
+      bctx.fillRect(p.x * MS - 1, p.y * MS - 1, 4, 4);
+    } else if (p.kind === "station") {
+      bctx.fillStyle = STATION_COLOR[p.station as StationKind];
+      bctx.fillRect(p.x * MS, p.y * MS, 3, 3);
     }
   }
 
@@ -36,19 +45,7 @@ export function setupMinimap(scene: HarborScene): void {
   function frame() {
     mctx.clearRect(0, 0, mini.width, mini.height);
     mctx.drawImage(base, 0, 0);
-    for (const p of MAP.props) {
-      if (p.kind === "dealer") {
-        mctx.fillStyle = "#15323b";
-        mctx.fillRect(p.x * MS - 1, p.y * MS - 1, 4, 4);
-      } else if (p.kind === "station") {
-        mctx.fillStyle = STATION_COLOR[p.station as StationKind];
-        mctx.fillRect(p.x * MS, p.y * MS, 3, 3);
-      } else if (p.kind === "villa" && p.forSale) {
-        mctx.fillStyle = "#e7c46b"; // for-sale villa
-        mctx.fillRect(p.x * MS - 1, p.y * MS - 1, 3, 3);
-      }
-    }
-    // your leased berths
+    // your leased berths (dynamic — can change while playing)
     mctx.fillStyle = "#1fa4bd";
     for (const id of scene.player.berths) {
       const b = MAP.berths.find((x) => x.id === id);

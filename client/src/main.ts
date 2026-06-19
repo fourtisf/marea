@@ -104,6 +104,15 @@ game.events.once(Phaser.Core.Events.READY, () => {
   // CA pill — contract address coming soon
   const caPill = document.getElementById("caPill");
   if (caPill) caPill.addEventListener("click", () => toast("Contract address — coming soon", "$RIV", "Stay tuned · @playmarea"));
+
+  // the help hint is just first-run guidance — let it fade on click or after a
+  // while so it never sits on top of the map/quest panel.
+  const hintEl = document.getElementById("hint");
+  if (hintEl) {
+    const hideHint = () => hintEl.classList.add("hide");
+    hintEl.addEventListener("click", hideHint);
+    setTimeout(hideHint, 15000);
+  }
 });
 
 function setupVolume(): void {
