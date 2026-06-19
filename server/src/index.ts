@@ -12,7 +12,22 @@ import { loadGateConfig } from "./solana/gate.js";
 
 const PORT = Number(process.env.PORT ?? "2567");
 
-// live, server-wide presence counters (the room keeps these fresh)
+// Player data is persisted to a JSON file by default (survives restarts and
+// deploys); set MAREA_DATA_FILE to relocate it. Falls back to in-memory only if
+// a repo can't be created. Built before the routes so /stats can read it.
+const dataFile = process.env.MAREA_DATA_FILE ?? resolve(process.cwd(), "data/marea.json");
+let repo: Repo;
+try {
+  repo = new FileRepo(dataFile);
+  console.log(`Persistence: file repo at ${dataFile}`);
+} catch (e) {
+  console.error("Persistence: file repo unavailable, using in-memory (data will NOT survive restarts).", e);
+  repo = new MemoryRepo();
+}
+const gateCfg = loadGateConfig(process.env);
+
+// live online count (the room keeps this fresh; total players is read live from
+// the repo so it's correct immediately after a restart, before anyone joins).
 const stats = { online: 0, totalUsers: 0 };
 
 const app = express();
@@ -21,7 +36,7 @@ app.get("/health", (_req, res) => {
 });
 app.get("/stats", (_req, res) => {
   res.set("Cache-Control", "no-store");
-  res.json(stats);
+  res.json({ online: stats.online, totalUsers: repo.totalUsers() });
 });
 
 // Serve the built client (same-origin with the game server). In production the
@@ -43,20 +58,6 @@ const httpServer = createServer(app);
 const gameServer = new Server({
   transport: new WebSocketTransport({ server: httpServer }),
 });
-
-// Shared singletons handed to every room instance. Player data is persisted to
-// a JSON file by default (survives restarts/deploys); set MAREA_DATA_FILE to
-// relocate it. Falls back to in-memory only if a repo can't be created.
-const dataFile = process.env.MAREA_DATA_FILE ?? resolve(process.cwd(), "data/marea.json");
-let repo: Repo;
-try {
-  repo = new FileRepo(dataFile);
-  console.log(`Persistence: file repo at ${dataFile}`);
-} catch (e) {
-  console.error("Persistence: file repo unavailable, using in-memory (data will NOT survive restarts).", e);
-  repo = new MemoryRepo();
-}
-const gateCfg = loadGateConfig(process.env);
 
 gameServer.define("harbor", HarborRoom, { repo, gateCfg, stats });
 
