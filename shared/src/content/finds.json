@@ -3,5 +3,9 @@
   {"id":"find_watch","name":"Lost Designer Watch","weight":25,"sell":650,"col":"#d9c27a"},
   {"id":"find_pearl","name":"Black Pearl","weight":20,"sell":900,"col":"#3a3f4a"},
   {"id":"find_plate","name":"Rare License Plate","weight":12,"sell":1500,"col":"#b6c2c6"},
-  {"id":"find_ring","name":"Diamond Signet Ring","weight":3,"sell":4200,"col":"#bfe9ff"}
+  {"id":"find_ring","name":"Diamond Signet Ring","weight":3,"sell":4200,"col":"#bfe9ff"},
+  {"id":"fish_sardine","name":"Sardine","weight":0,"sell":12,"col":"#9bb7c4"},
+  {"id":"fish_bream","name":"Sea Bream","weight":0,"sell":30,"col":"#cdb98a"},
+  {"id":"fish_tuna","name":"Bluefin Tuna","weight":0,"sell":85,"col":"#3a6b8a"},
+  {"id":"fish_boot","name":"Old Boot","weight":0,"sell":3,"col":"#5a4632"}
 ]

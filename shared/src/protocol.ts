@@ -7,6 +7,7 @@
 export type ClientMessage =
   | { t: "move"; gridX: number; gridY: number }
   | { t: "start_job"; jobId: string; stationId: string }    // stationId = "x,y"
+  | { t: "cast" }                                            // fish at the water's edge
   | { t: "buy_vehicle"; vehicleId: string }
   | { t: "equip_vehicle"; vehicleId: string }
   | { t: "sell_find"; findId: string }

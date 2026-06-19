@@ -16,6 +16,13 @@ export const walkable = (x: number, y: number): boolean =>
 export const orthogonallyAdjacent = (ax: number, ay: number, bx: number, by: number): boolean =>
   Math.abs(ax - bx) + Math.abs(ay - by) === 1;
 
+export const isWater = (x: number, y: number): boolean =>
+  inBounds(x, y) && MAP.tiles[y][x] === "water";
+
+// You can fish from any quay tile that borders the marina water.
+export const waterAdjacent = (x: number, y: number): boolean =>
+  ([[1, 0], [-1, 0], [0, 1], [0, -1]] as const).some(([dx, dy]) => isWater(x + dx, y + dy));
+
 export function stationAt(x: number, y: number): StationKind | null {
   const p = MAP.props.find((pp): pp is Extract<Prop, { kind: "station" }> =>
     pp.kind === "station" && pp.x === x && pp.y === y

@@ -1,5 +1,5 @@
-import { DROP_CHANCE_PER_JOB, FINDS, JOBS, RARE_FINDS, type FindReward } from "@marea/shared";
-import { orthogonallyAdjacent, stationAt } from "../world.js";
+import { DROP_CHANCE_PER_JOB, FINDS, JOBS, RARE_FINDS, FISH_DUR, FISH_PAY, type FindReward, type Job } from "@marea/shared";
+import { orthogonallyAdjacent, stationAt, waterAdjacent } from "../world.js";
 import type { PrivatePlayer } from "../types.js";
 import type { PlayerSchema } from "../schema/HarborState.js";
 
@@ -17,7 +17,18 @@ export function startJob(priv: PrivatePlayer, sp: PlayerSchema, jobId: string, s
   const def = JOBS[station].find((j) => j.id === jobId);
   if (!def) return { ok: false, error: "That job isn't offered here." };
   priv.path = []; // stop walking
-  priv.job = { def, station, remaining: def.dur };
+  priv.job = { def, kind: "work", remaining: def.dur };
+  return { ok: true };
+}
+
+// On cast: verify the player stands beside marina water, then start a fishing
+// timer (a job with a near-certain catch instead of a rare treasure).
+export function startFishing(priv: PrivatePlayer, sp: PlayerSchema): StartJobResult {
+  if (priv.job) return { ok: false, error: "You're already busy." };
+  if (!waterAdjacent(sp.gx, sp.gy)) return { ok: false, error: "Stand at the water's edge to cast." };
+  const def: Job = { id: "cast", name: "Cast a line", dur: FISH_DUR, pay: FISH_PAY };
+  priv.path = [];
+  priv.job = { def, kind: "fish", remaining: def.dur };
   return { ok: true };
 }
 
@@ -25,14 +36,16 @@ export interface JobCompletion {
   payout: number;
   find: FindReward | null;
   rare: boolean;
+  kind: "work" | "fish";
 }
 
 function rollFind(): FindReward | null {
   if (Math.random() >= DROP_CHANCE_PER_JOB) return null;
-  const total = FINDS.reduce((s, f) => s + f.weight, 0);
+  const pool = FINDS.filter((f) => f.weight > 0);
+  const total = pool.reduce((s, f) => s + f.weight, 0);
   let r = Math.random() * total;
-  let chosen = FINDS[0];
-  for (const f of FINDS) {
+  let chosen = pool[0];
+  for (const f of pool) {
     if (r < f.weight) {
       chosen = f;
       break;
@@ -42,17 +55,36 @@ function rollFind(): FindReward | null {
   return { id: chosen.id, sell: chosen.sell };
 }
 
+// Fishing almost always lands something — a weighted catch from the fish table.
+const FISH_TABLE: { id: string; weight: number }[] = [
+  { id: "fish_sardine", weight: 50 },
+  { id: "fish_bream", weight: 30 },
+  { id: "fish_boot", weight: 12 },
+  { id: "fish_tuna", weight: 8 },
+];
+function rollFish(): FindReward | null {
+  const total = FISH_TABLE.reduce((s, f) => s + f.weight, 0);
+  let r = Math.random() * total;
+  let id = FISH_TABLE[0].id;
+  for (const f of FISH_TABLE) {
+    if (r < f.weight) { id = f.id; break; }
+    r -= f.weight;
+  }
+  const sell = FINDS.find((f) => f.id === id)?.sell ?? 0;
+  return { id, sell };
+}
+
 // Advance the active job timer; returns a completion (and mutates priv) when done.
 export function tickJob(priv: PrivatePlayer, dt: number): JobCompletion | null {
   if (!priv.job) return null;
   priv.job.remaining -= dt;
   if (priv.job.remaining > 0) return null;
 
-  const def = priv.job.def;
+  const { def, kind } = priv.job;
   priv.job = null;
   priv.credits += def.pay;
-  const find = rollFind();
+  const find = kind === "fish" ? rollFish() : rollFind();
   if (find) priv.finds.push(find.id);
   priv.dirty = true;
-  return { payout: def.pay, find, rare: find ? RARE_FINDS.includes(find.id) : false };
+  return { payout: def.pay, find, rare: find ? RARE_FINDS.includes(find.id) : false, kind };
 }

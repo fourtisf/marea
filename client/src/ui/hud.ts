@@ -1,4 +1,4 @@
-import { BERTH_PRICE, MAP, vehicleById, findById, levelProgress } from "@marea/shared";
+import { BERTH_PRICE, MAP, vehicleById, findById, levelProgress, rankForLevel } from "@marea/shared";
 import type { HarborScene } from "../scenes/HarborScene";
 
 const fmt = (n: number) => Math.floor(n).toLocaleString("en-US");
@@ -39,6 +39,8 @@ export function updateHud(scene: HarborScene): void {
   const lp = levelProgress(scene.xp);
   const lvl = document.getElementById("lvlVal");
   if (lvl) lvl.textContent = String(lp.level);
+  const rank = document.getElementById("rankVal");
+  if (rank) rank.textContent = rankForLevel(lp.level);
   const xpFill = document.getElementById("xpFill");
   if (xpFill) xpFill.style.width = Math.min(100, (lp.into / lp.span) * 100) + "%";
 }

@@ -12,6 +12,12 @@ export const inBounds = (x: number, y: number): boolean =>
 export const walkable = (x: number, y: number): boolean =>
   inBounds(x, y) && MAP.tiles[y][x] === "quay" && !blocked.has(x + "," + y);
 
+export const isWater = (x: number, y: number): boolean =>
+  inBounds(x, y) && MAP.tiles[y][x] === "water";
+
+export const waterAdjacent = (x: number, y: number): boolean =>
+  ([[1, 0], [-1, 0], [0, 1], [0, -1]] as const).some(([dx, dy]) => isWater(x + dx, y + dy));
+
 export const propAt = (x: number, y: number): Prop | undefined =>
   MAP.props.find((p) => p.x === x && p.y === y);
 

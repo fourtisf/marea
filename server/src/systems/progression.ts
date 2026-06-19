@@ -19,10 +19,12 @@ export function progress(priv: PrivatePlayer, kind: QuestKind, n: number, baseXp
     const next = (priv.quests[q.id] ?? 0) + n;
     priv.quests[q.id] = Math.min(q.target, next);
     if (next >= q.target) {
-      priv.questsDone.push(q.id);
       priv.xp += q.xp;
       priv.credits += q.credits;
       questsCompleted.push({ id: q.id, xp: q.xp, credits: q.credits });
+      // repeatable bounties reset so they can be earned again; one-offs are done
+      if (q.repeatable) priv.quests[q.id] = 0;
+      else priv.questsDone.push(q.id);
     }
   }
 

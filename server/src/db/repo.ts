@@ -1,6 +1,7 @@
 import {
   OFFLINE_CAP_MINUTES,
   BERTH_RATE_PER_SEC,
+  VILLA_RATE_PER_SEC,
   STARTING_CREDITS,
   STARTING_VEHICLE,
   STARTING_LOOK,
@@ -76,8 +77,10 @@ export function freshPlayer(wallet: string, name: string): PersistedPlayer {
 
 // Offline berth income, capped. Computed on load from the persisted record.
 export function offlineBerthIncome(p: PersistedPlayer): number {
-  if (!p.berths.length || !p.lastSeen) return 0;
+  if (!p.lastSeen) return 0;
+  const rate = p.berths.length * BERTH_RATE_PER_SEC + (p.villa ? VILLA_RATE_PER_SEC : 0);
+  if (rate <= 0) return 0;
   const minutes = Math.min(OFFLINE_CAP_MINUTES, (Date.now() - p.lastSeen) / 60000);
   if (minutes <= 0) return 0;
-  return Math.floor(minutes * 60 * BERTH_RATE_PER_SEC * p.berths.length);
+  return Math.floor(minutes * 60 * rate);
 }

@@ -1,4 +1,4 @@
-import type { Job, StationKind } from "@marea/shared";
+import type { Job } from "@marea/shared";
 import type { GridPoint } from "./world.js";
 
 // Private, server-owned per-player state. NEVER placed in the broadcast schema.
@@ -25,8 +25,8 @@ export interface PrivatePlayer {
   // movement (cartesian path the player is walking)
   path: GridPoint[];
 
-  // active marina job (server-owned timer)
-  job: { def: Job; station: StationKind; remaining: number } | null;
+  // active marina job or fishing cast (server-owned timer)
+  job: { def: Job; kind: "work" | "fish"; remaining: number } | null;
 
   // passive berth income carry (fractional credits)
   berthFraction: number;

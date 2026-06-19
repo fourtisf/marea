@@ -14,6 +14,7 @@ export interface Vehicle {
   type: VehicleType;
   price: number;
   col: string;
+  speed: number; // movement multiplier (1 = base)
 }
 
 export interface Find {

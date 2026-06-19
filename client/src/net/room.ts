@@ -1,5 +1,5 @@
 import { Client, Room, getStateCallbacks } from "colyseus.js";
-import { questById, type ClientMessage, type LeaderboardRow, type ServerMessage } from "@marea/shared";
+import { questById, FISH_DUR, type ClientMessage, type LeaderboardRow, type ServerMessage } from "@marea/shared";
 import type { HarborScene } from "../scenes/HarborScene";
 import { sfx } from "../ui/audio";
 
@@ -53,6 +53,11 @@ export class NetClient {
     this.send({ t: "start_job", jobId, stationId });
   }
 
+  cast(): void {
+    this.scene.beginJob(FISH_DUR);
+    this.send({ t: "cast" });
+  }
+
   private bindState(room: Room): void {
     const $ = getStateCallbacks(room);
     const state = $(room.state);
@@ -88,7 +93,10 @@ export class NetClient {
       room.onMessage(t, cb as (m: unknown) => void);
 
     on("credits", (m) => {
+      const delta = m.credits - this.scene.player.credits;
       this.scene.player.credits = m.credits;
+      // float a "+N" over the player for meaningful gains (skip tiny berth drips)
+      if (delta >= 8) this.scene.popFloater("+" + delta.toLocaleString("en-US"));
       this.ui.hud();
       this.ui.refreshDealer();
     });

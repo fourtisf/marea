@@ -14,7 +14,7 @@ import {
 import { HarborState, PlayerSchema } from "../schema/HarborState.js";
 import type { PrivatePlayer } from "../types.js";
 import { requestMove, tickMovement } from "../systems/movement.js";
-import { startJob, tickJob } from "../systems/jobs.js";
+import { startJob, startFishing, tickJob } from "../systems/jobs.js";
 import { buyVehicle, equipVehicle, sellFind } from "../systems/dealer.js";
 import { buyVilla, leaseBerth, tickBerthIncome } from "../systems/estate.js";
 import { handleChat } from "../systems/chat.js";
@@ -70,6 +70,13 @@ export class HarborRoom extends Room<HarborState> {
       if (m.t !== "start_job") return;
       this.withPlayer(c, (priv, sp) => {
         const r = startJob(priv, sp, m.jobId, m.stationId);
+        if (!r.ok) this.sendMsg(c, { t: "error", message: r.error });
+      });
+    });
+    this.onMessage<ClientMessage>("cast", (c, m) => {
+      if (m.t !== "cast") return;
+      this.withPlayer(c, (priv, sp) => {
+        const r = startFishing(priv, sp);
         if (!r.ok) this.sendMsg(c, { t: "error", message: r.error });
       });
     });
@@ -233,7 +240,7 @@ export class HarborRoom extends Room<HarborState> {
           this.sendMsg(client, { t: "job_done", payout: completion.payout, find: completion.find });
           this.sendCredits(client, priv);
           this.sendInventory(client, priv);
-          this.applyProgress(client, priv, "work", 1, XP_PER_JOB);
+          this.applyProgress(client, priv, completion.kind === "fish" ? "fish" : "work", 1, XP_PER_JOB);
         }
         if (completion.find && completion.rare) {
           const f = completion.find;

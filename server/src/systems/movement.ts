@@ -1,4 +1,4 @@
-import { MOVE_TILES_PER_SEC } from "@marea/shared";
+import { MOVE_TILES_PER_SEC, vehicleById } from "@marea/shared";
 import { pathTo } from "../world.js";
 import type { PrivatePlayer } from "../types.js";
 import type { PlayerSchema } from "../schema/HarborState.js";
@@ -19,7 +19,8 @@ export function tickMovement(priv: PrivatePlayer, sp: PlayerSchema, dt: number):
   const dx = next.x - sp.rx;
   const dy = next.y - sp.ry;
   const d = Math.hypot(dx, dy);
-  const step = MOVE_TILES_PER_SEC * dt;
+  const speed = vehicleById(priv.equipped)?.speed ?? 1;
+  const step = MOVE_TILES_PER_SEC * speed * dt;
   if (d <= step || d === 0) {
     sp.rx = next.x;
     sp.ry = next.y;

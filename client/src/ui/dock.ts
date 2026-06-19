@@ -1,5 +1,5 @@
-import { JOBS, BERTH_PRICE, type StationKind } from "@marea/shared";
-import { propAt, berthAt } from "../world";
+import { JOBS, BERTH_PRICE, FISH_DUR, type StationKind } from "@marea/shared";
+import { propAt, berthAt, waterAdjacent } from "../world";
 import { STATION_LABEL } from "../render/draw";
 import type { HarborScene } from "../scenes/HarborScene";
 import type { NetClient } from "../net/room";
@@ -11,6 +11,7 @@ type Ctx =
   | { type: "station"; station: StationKind; x: number; y: number; sig: string }
   | { type: "villa"; x: number; y: number; price: number; sig: string }
   | { type: "berth"; berthId: string; sig: string }
+  | { type: "water"; sig: string }
   | null;
 
 // Contextual action dock: shows jobs / dealer / buy-villa / lease-berth based on
@@ -39,6 +40,8 @@ export function setupDock(scene: HarborScene, net: NetClient, openDealer: () => 
         return { type: "berth", berthId: berth.id, sig: `berth${berth.id}` };
       }
     }
+    // lowest priority: standing at the water's edge lets you fish
+    if (waterAdjacent(p.tile.x, p.tile.y)) return { type: "water", sig: "water" };
     return null;
   }
 
@@ -89,11 +92,19 @@ export function setupDock(scene: HarborScene, net: NetClient, openDealer: () => 
       dock.innerHTML =
         `<div class="eyebrow">Hillside villa · for sale</div><div class="jobs"><button class="btn ${can ? "primary" : ""}" id="bv" ${can ? "" : "disabled"}>Buy this villa<span class="pay">${fmt(a.price)} cr · visible status</span></button></div>`;
       if (can) byId("bv").onclick = () => net.send({ t: "buy_villa", villaId: `${a.x},${a.y}` });
-    } else {
+    } else if (a.type === "berth") {
       const can = scene.player.credits >= BERTH_PRICE;
       dock.innerHTML =
         `<div class="eyebrow">Open berth</div><div class="jobs"><button class="btn ${can ? "primary" : ""}" id="bb" ${can ? "" : "disabled"}>Lease this berth<span class="pay">${fmt(BERTH_PRICE)} cr · +passive income</span></button></div>`;
       if (can) byId("bb").onclick = () => net.send({ t: "lease_berth", berthId: a.berthId });
+    } else {
+      dock.innerHTML =
+        `<div class="eyebrow">Water's edge</div><div class="jobs"><button class="btn primary" id="cast">Cast a line<span class="pay">~${FISH_DUR}s · reel in a fish</span></button></div>`;
+      byId("cast").onclick = () => {
+        net.cast();
+        dock.classList.remove("show");
+        lastSig = "";
+      };
     }
     dock.classList.add("show");
     requestAnimationFrame(render);

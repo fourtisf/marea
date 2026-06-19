@@ -1,4 +1,4 @@
-import { BERTH_PRICE, BERTH_RATE_PER_SEC, vehicleById, findById } from "@marea/shared";
+import { BERTH_PRICE, BERTH_RATE_PER_SEC, VILLA_RATE_PER_SEC, vehicleById, findById } from "@marea/shared";
 import { berthById, villaAt } from "../world.js";
 import type { PrivatePlayer } from "../types.js";
 import type { HarborState } from "../schema/HarborState.js";
@@ -36,8 +36,9 @@ export function leaseBerth(priv: PrivatePlayer, state: HarborState, berthId: str
 // Each tick accrue passive berth income, carrying a fractional remainder.
 // Returns true when whole Credits were committed (room should resend credits).
 export function tickBerthIncome(priv: PrivatePlayer, dt: number): boolean {
-  if (!priv.berths.length) return false;
-  priv.berthFraction += priv.berths.length * BERTH_RATE_PER_SEC * dt;
+  const rate = priv.berths.length * BERTH_RATE_PER_SEC + (priv.villa ? VILLA_RATE_PER_SEC : 0);
+  if (rate <= 0) return false;
+  priv.berthFraction += rate * dt;
   if (priv.berthFraction < 1) return false;
   const add = Math.floor(priv.berthFraction);
   priv.berthFraction -= add;

@@ -100,6 +100,13 @@ export class HarborScene extends Phaser.Scene {
   questsDone: string[] = [];
   // onboarding guide arrow: the kind of POI the current quest points at
   objectiveKind: string | null = null;
+  // floating "+N" reward texts (juice) anchored at the player when earned
+  private floaters: { text: string; x: number; y: number; t: number }[] = [];
+
+  popFloater(text: string): void {
+    this.floaters.push({ text, x: this.player.pos.x, y: this.player.pos.y, t: 0 });
+    if (this.floaters.length > 8) this.floaters.shift();
+  }
   private serverTarget: { x: number; y: number } | null = null;
 
   readonly player: LocalPlayer = {
@@ -411,6 +418,10 @@ export class HarborScene extends Phaser.Scene {
       this.marker.t += dt;
       if (this.marker.t > 1.1) this.marker = null;
     }
+    for (let i = this.floaters.length - 1; i >= 0; i--) {
+      this.floaters[i].t += dt;
+      if (this.floaters[i].t > 1.4) this.floaters.splice(i, 1);
+    }
 
     const pw = cartToWorld(this.player.pos.x, this.player.pos.y);
     this.cam.x += (pw.x - this.cam.x) * Math.min(1, dt * 6);
@@ -633,6 +644,25 @@ export class HarborScene extends Phaser.Scene {
         ctx.textAlign = "left";
       }
     }
+
+    // floating reward texts (juice) — rise and fade over the spot they were earned
+    if (this.floaters.length) {
+      ctx.save();
+      ctx.textAlign = "center";
+      ctx.font = "bold 16px Georgia, serif";
+      for (const f of this.floaters) {
+        const wp = cartToWorld(f.x, f.y);
+        const sx = W / 2 + (wp.x - this.cam.x) * this.zoom;
+        const sy = H / 2 + (wp.y - this.cam.y) * this.zoom - 40 - f.t * 34;
+        const a = Math.max(0, 1 - f.t / 1.4);
+        ctx.globalAlpha = a;
+        ctx.fillStyle = "#3a2c08";
+        ctx.fillText(f.text, sx + 1, sy + 1);
+        ctx.fillStyle = "#e7c46b";
+        ctx.fillText(f.text, sx, sy);
+      }
+      ctx.restore();
+    }
   }
 
   private localVillaOwner(x: number, y: number): string | null {
@@ -656,7 +686,8 @@ export class HarborScene extends Phaser.Scene {
       case "work": return nearest(stations());
       case "sell":
       case "buy_vehicle": { const d = dealer(); return d ? { x: d.x, y: d.y } : null; }
-      case "lease_berth": return nearest(MAP.berths);
+      case "lease_berth":
+      case "fish": return nearest(MAP.berths);
       default: return null;
     }
   }
