@@ -1,10 +1,11 @@
 // Client-side view of the authoritative map: walkability + pathfinding for
 // local feel (click-to-move). The server still owns the real movement; this
 // only computes the intent path so the marker/preview feels instant.
-import { MAP, type Berth, type Prop } from "@marea/shared";
+import { MAP, propBlocks, type Berth, type Prop } from "@marea/shared";
 
 const GRID = MAP.grid;
-const blocked = new Set<string>(MAP.props.map((p) => p.x + "," + p.y));
+// only solid structures block movement; decorative props are walkable ambiance
+const blocked = new Set<string>(MAP.props.filter((p) => propBlocks(p.kind)).map((p) => p.x + "," + p.y));
 // O(1) spatial indexes (props/berths never move) — linear scans here were
 // called for every neighbour every frame and showed up as input jank.
 const propIndex = new Map<string, Prop>(MAP.props.map((p) => [p.x + "," + p.y, p]));

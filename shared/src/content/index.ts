@@ -91,6 +91,12 @@ export const MAP = mapJson as unknown as MareaMap;
 
 export const lookById = (id: string): Look | undefined => LOOKS.find((l) => l.id === id);
 
+// Which props physically block movement. Decorative props (palms, lamps, parked
+// cars) are walkable ambiance you stroll past; only solid structures you act on
+// or that are buildings block the path.
+const SOLID_PROP_KINDS = new Set(["villa", "dealer", "station", "cafe", "stall", "fountain"]);
+export const propBlocks = (kind: string): boolean => SOLID_PROP_KINDS.has(kind);
+
 // Rare finds that trigger a harbor-wide announcement.
 export const RARE_FINDS: readonly string[] = ["find_plate", "find_ring"];
 

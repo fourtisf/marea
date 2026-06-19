@@ -1,9 +1,10 @@
 // Authoritative world helpers — cartesian grid ONLY. The server is
 // projection-blind: nothing here references the isometric projection.
-import { MAP, type Berth, type Prop, type StationKind } from "@marea/shared";
+import { MAP, propBlocks, type Berth, type Prop, type StationKind } from "@marea/shared";
 
 const GRID = MAP.grid;
-const blocked = new Set<string>(MAP.props.map((p) => p.x + "," + p.y));
+// only solid structures block movement; decorative props are walkable
+const blocked = new Set<string>(MAP.props.filter((p) => propBlocks(p.kind)).map((p) => p.x + "," + p.y));
 
 export const key = (x: number, y: number): string => x + "," + y;
 
