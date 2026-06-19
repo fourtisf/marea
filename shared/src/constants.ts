@@ -4,7 +4,7 @@
 // IMPORTANT: TILE_W / TILE_H are *client render only* (isometric projection).
 // The server is projection-blind and must never read them.
 
-export const GRID = 52;             // harbor tiles (x and y); map.json must match
+export const GRID = 130;            // harbor tiles (x and y); map.json must match
 export const TILE_W = 64;           // iso diamond width (px) — CLIENT render only
 export const TILE_H = 32;           // iso diamond height (px) — CLIENT render only
 export const TILE_THICK = 11;       // quay slab thickness (px) — CLIENT render only

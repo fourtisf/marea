@@ -28,11 +28,17 @@ const rng = mulberry32(MAP_SEED);
 const ri = (n: number) => Math.floor(rng() * n);
 const rPick = <T>(a: T[]): T => a[ri(a.length)];
 
+// The layout below was tuned for a 52-tile grid. `S` scales every landmark,
+// band and the coastline to the real GRID, so bumping GRID grows the whole
+// harbour proportionally instead of leaving it stranded in one corner.
+const S = GRID / 52;
+const sc = (n: number) => Math.round(n * S);
+
 // ---------- tiles ----------
 const tiles: Tile[][] = [];
 // Land-dominant coastline: most of the grid is walkable quay (a big, full
 // harbour), with the sea pushed out to the bottom-right corner as a marina.
-const coast = (x: number) => 73 + Math.round(Math.sin(x * 0.3) * 5);
+const coast = (x: number) => sc(73) + Math.round(Math.sin(x * (0.3 / S)) * sc(5));
 for (let y = 0; y < GRID; y++) {
   tiles[y] = [];
   for (let x = 0; x < GRID; x++) tiles[y][x] = x + y >= coast(x) ? "water" : "quay";
@@ -83,14 +89,14 @@ function buildPier(bx: number, by: number, len: number) {
     });
   }
 }
-// piers sit along the new coast (≈ x+y 73) so berths land on the marina water
-buildPier(40, 30, 9);
-buildPier(32, 38, 9);
-buildPier(46, 24, 8);
-buildPier(26, 44, 7);
+// piers sit along the scaled coast so berths land on the marina water
+buildPier(sc(40), sc(30), sc(9));
+buildPier(sc(32), sc(38), sc(9));
+buildPier(sc(46), sc(24), sc(8));
+buildPier(sc(26), sc(44), sc(7));
 
-place({ x: 24, y: 18, kind: "dealer" });
-const SPAWN = { x: 22, y: 20 };
+place({ x: sc(24), y: sc(18), kind: "dealer" });
+const SPAWN = { x: sc(22), y: sc(20) };
 (
   [
     ["wash", 30, 12],
@@ -100,7 +106,8 @@ const SPAWN = { x: 22, y: 20 };
     ["repair", 34, 10],
     ["repair", 12, 30],
   ] as const
-).forEach(([s, x, y]) => {
+).forEach(([s, bx, by]) => {
+  const x = sc(bx), y = sc(by);
   if (tiles[y][x] === "quay" && !isOcc(x, y)) place({ x, y, kind: "station", station: s });
 });
 
@@ -110,7 +117,7 @@ for (let y = 0; y < GRID; y++)
   for (let x = 0; x < GRID; x++) {
     if (tiles[y][x] !== "quay" || isOcc(x, y)) continue;
     const s = x + y;
-    if (s < 4 || s > 26) continue;
+    if (s < sc(4) || s > sc(26)) continue;
     const near = ([[1, 0], [0, 1], [-1, 0], [0, -1]] as const).some(([dx, dy]) =>
       isOcc(x + dx, y + dy)
     );
@@ -137,8 +144,8 @@ for (let y = 0; y < GRID; y++)
   for (let x = 0; x < GRID; x++) {
     if (tiles[y][x] !== "quay" || isOcc(x, y)) continue;
     const s = x + y;
-    if (s < 6 || s > coast(x) - 2) continue;
-    if (Math.abs(x - SPAWN.x) < 4 && Math.abs(y - SPAWN.y) < 4) continue;
+    if (s < sc(6) || s > coast(x) - 2) continue;
+    if (Math.abs(x - SPAWN.x) < sc(4) && Math.abs(y - SPAWN.y) < sc(4)) continue;
     if (rng() < 0.08) place({ x, y, kind: "palm" });
   }
 
@@ -147,7 +154,7 @@ for (let y = 0; y < GRID; y++)
   for (let x = 0; x < GRID; x++) {
     if (tiles[y][x] !== "quay" || isOcc(x, y)) continue;
     const s = x + y;
-    if (s < 28 || s > coast(x) - 1) continue;
+    if (s < sc(28) || s > coast(x) - 1) continue;
     const r = rng();
     if (r < 0.05) place({ x, y, kind: "cafe" });
     else if (r < 0.1) place({ x, y, kind: "lamp" });
@@ -158,7 +165,7 @@ for (let y = 0; y < GRID; y++)
   }
 
 // a fountain plaza near spawn
-place({ x: 25, y: 23, kind: "fountain" });
+place({ x: sc(25), y: sc(23), kind: "fountain" });
 
 // keep spawn clear
 for (let dx = -1; dx <= 1; dx++)
