@@ -11,7 +11,6 @@ import {
 import { cartToWorld, screenToTile, TILE_PX, type ScreenPoint, type Tile } from "../iso/iso";
 import { walkable, propAt, berthAt, pathTo, inBounds } from "../world";
 import {
-  quayTile,
   waterTile,
   drawVilla,
   drawPalm,
@@ -428,6 +427,17 @@ export class HarborScene extends Phaser.Scene {
         p.fillStyle = shades[(i + j) % 2];
         p.fillRect(i * T, j * T, T, T);
       }
+    // bake the faint tile grid into the pattern so we never stroke per-tile/frame
+    p.strokeStyle = "rgba(150,120,60,.10)";
+    p.lineWidth = 1;
+    for (let k = 0; k <= 2; k++) {
+      p.beginPath();
+      p.moveTo(k * T + 0.5, 0);
+      p.lineTo(k * T + 0.5, 2 * T);
+      p.moveTo(0, k * T + 0.5);
+      p.lineTo(2 * T, k * T + 0.5);
+      p.stroke();
+    }
     this.groundPattern = this.ctx.createPattern(pc, "repeat");
   }
 
@@ -467,12 +477,12 @@ export class HarborScene extends Phaser.Scene {
     const vis = (wx: number, wy: number) =>
       wx >= this.cam.x - hw - T && wx <= this.cam.x + hw + T && wy >= this.cam.y - hh - T && wy <= this.cam.y + hh + T;
 
-    // draw every visible grid tile: quay (land) over the ground background, and
-    // the marina water tiles explicitly as sea (the only blue in the scene).
+    // The ground background already paints the land (identical checker), so we
+    // only draw the marina water tiles here — the one part that differs and
+    // animates. Skipping ~14k redundant quay draws/frame keeps the big map fast.
     for (let cy = cy0; cy <= cy1; cy++) {
       for (let cx = cx0; cx <= cx1; cx++) {
         if (MAP.tiles[cy][cx] === "water") waterTile(ctx, cx, cy, cx * T, cy * T, this.tsec);
-        else quayTile(ctx, cx, cy, cx * T, cy * T);
       }
     }
 
