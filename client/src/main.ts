@@ -189,14 +189,11 @@ function setupIntro(net: NetClient, chat: { addLine: (from: string, text: string
   };
 
   const start = () => {
-    const nm = nameIn.value.trim();
+    // A name is nice-to-have, not a blocker. Defaulting it means "Connect Wallet"
+    // ALWAYS opens the wallet prompt (standard wallet-first UX) instead of
+    // dead-ending on an empty field. The server also defaults a blank name.
+    const nm = nameIn.value.trim() || "Sailor";
     err.style.color = "#b04a3a";
-    if (!nm) {
-      err.textContent = "Enter a name to continue.";
-      toast("Enter a name to continue", "Marea", "");
-      nameIn.focus();
-      return;
-    }
     wallets = getSolanaWallets();
     if (wallets.length === 0) {
       err.innerHTML =
