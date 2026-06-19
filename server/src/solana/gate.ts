@@ -34,10 +34,19 @@ async function readSplBalance(_cfg: GateConfig, _wallet: string): Promise<number
   throw new Error("Solana balance read not implemented yet (Phase 6).");
 }
 
+// Basic shape check for a Solana address (base58, 32–44 chars). Not proof of
+// ownership — the soft gate just needs a plausible public key.
+const BASE58 = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+export function isLikelySolanaAddress(s: string): boolean {
+  return BASE58.test(s);
+}
+
 export async function checkGate(cfg: GateConfig, wallet: string): Promise<GateResult> {
   if (cfg.devOpen) return { ok: true };
-  if (!cfg.mint) return { ok: true }; // gate not configured → harbor is open
-  if (!wallet) return { ok: false, reason: "Connect a wallet to enter." };
+  // wallet is mandatory to play
+  if (!wallet) return { ok: false, reason: "Connect a Solana wallet to enter." };
+  if (!isLikelySolanaAddress(wallet)) return { ok: false, reason: "That doesn't look like a valid wallet address." };
+  if (!cfg.mint) return { ok: true }; // wallet connected; $RIV token gate not configured yet
   if (!cfg.rpcUrl) {
     return { ok: false, reason: "Access gate misconfigured: set SOLANA_RPC_URL." };
   }

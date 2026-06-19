@@ -12,6 +12,8 @@ import { setupDealer } from "./ui/dealer";
 import { setupDock } from "./ui/dock";
 import { setupJoystick } from "./ui/joystick";
 import { toast, banner } from "./ui/notify";
+import { getSolanaWallets, connectWallet } from "./net/wallet";
+import type { Wallet } from "@wallet-standard/base";
 
 const game = new Phaser.Game({
   type: Phaser.CANVAS,
@@ -134,27 +136,57 @@ function setupIntro(net: NetClient, chat: { addLine: (from: string, text: string
     picker.appendChild(btn);
   });
 
-  const enter = async () => {
-    const nm = nameIn.value.trim();
-    if (!nm) {
-      err.textContent = "Enter a name to continue.";
-      return;
-    }
+  const walletChoose = byId("walletChoose");
+
+  // connect a specific wallet, then enter the harbor with its public key
+  const enterWith = async (wallet: Wallet, nm: string) => {
     goBtn.disabled = true;
-    err.textContent = "";
+    walletChoose.classList.remove("show");
+    err.style.color = "var(--ink-soft)";
+    err.textContent = "Connecting wallet…";
     try {
-      // Phase 6 will supply the connected wallet address here; dev gate is open.
-      await net.connect(nm.slice(0, 14), "", selectedLook);
+      const address = await connectWallet(wallet);
+      err.textContent = "Entering the harbor…";
+      await net.connect(nm.slice(0, 14), address, selectedLook);
       intro.classList.add("hide");
       ensureAudio();
       chat.addLine("system", `Welcome to Marea, ${nm.slice(0, 14)}.`);
     } catch (e) {
-      err.textContent = e instanceof Error ? e.message : "Could not reach the harbor.";
+      err.style.color = "#b04a3a";
+      err.textContent = e instanceof Error ? e.message : "Wallet connection was cancelled.";
       goBtn.disabled = false;
     }
   };
-  goBtn.onclick = enter;
+
+  const start = () => {
+    const nm = nameIn.value.trim();
+    err.style.color = "#b04a3a";
+    if (!nm) {
+      err.textContent = "Enter a name to continue.";
+      return;
+    }
+    const wallets = getSolanaWallets();
+    if (wallets.length === 0) {
+      err.innerHTML =
+        'No Solana wallet found. Install <a href="https://phantom.app" target="_blank" rel="noopener">Phantom</a>, Solflare or Backpack, then reload.';
+      return;
+    }
+    if (wallets.length === 1) {
+      void enterWith(wallets[0].wallet, nm);
+      return;
+    }
+    // multiple wallets → let the player choose
+    walletChoose.innerHTML =
+      '<div class="wc-label">Choose a wallet</div>' +
+      wallets.map((w, i) => `<button class="wc-btn" data-i="${i}"><img src="${w.icon}" alt="" />${w.name}</button>`).join("");
+    walletChoose.classList.add("show");
+    walletChoose.querySelectorAll<HTMLButtonElement>(".wc-btn").forEach((b) => {
+      b.onclick = () => void enterWith(wallets[Number(b.dataset.i)].wallet, nm);
+    });
+  };
+
+  goBtn.onclick = start;
   nameIn.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") enter();
+    if (e.key === "Enter") start();
   });
 }

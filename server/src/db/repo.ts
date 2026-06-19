@@ -24,22 +24,32 @@ export interface Repo {
   load(wallet: string): Promise<PersistedPlayer | null>;
   save(p: PersistedPlayer): Promise<void>;
   touchLastSeen(wallet: string): Promise<void>;
+  markSeen(wallet: string): void; // count a distinct user
+  totalUsers(): number;
 }
 
 // In-memory repo — survives for the life of the server process. Phase 5 swaps
 // this for a Prisma/Postgres implementation behind the same interface.
 export class MemoryRepo implements Repo {
   private store = new Map<string, PersistedPlayer>();
+  private seen = new Set<string>();
 
   async load(wallet: string): Promise<PersistedPlayer | null> {
     return this.store.get(wallet) ?? null;
   }
   async save(p: PersistedPlayer): Promise<void> {
     this.store.set(p.wallet, { ...p });
+    this.seen.add(p.wallet);
   }
   async touchLastSeen(wallet: string): Promise<void> {
     const p = this.store.get(wallet);
     if (p) p.lastSeen = Date.now();
+  }
+  markSeen(wallet: string): void {
+    this.seen.add(wallet);
+  }
+  totalUsers(): number {
+    return this.seen.size;
   }
 }
 

@@ -31,4 +31,8 @@ export function updateHud(scene: HarborScene): void {
   byId("creditsVal").textContent = fmt(p.credits);
   byId("nwVal").textContent = fmt(netWorth(scene));
   byId("vehVal").textContent = vehicleById(p.equipped)?.name ?? p.equipped;
+  const online = document.getElementById("onlineVal");
+  if (online) online.textContent = String(scene.online);
+  const users = document.getElementById("usersVal");
+  if (users) users.textContent = String(scene.totalUsers);
 }

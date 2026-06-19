@@ -40,6 +40,7 @@ export class HarborRoom extends Room<HarborState> {
   onCreate(options: RoomOptions): void {
     if (options.repo) this.repo = options.repo;
     if (options.gateCfg) this.gateCfg = options.gateCfg;
+    this.maxClients = 200; // one shared harbor
     this.setState(new HarborState());
     this.setSimulationInterval((dt) => this.tick(dt), 1000 / SERVER_TICK_HZ);
 
@@ -112,11 +113,16 @@ export class HarborRoom extends Room<HarborState> {
   }
 
   async onJoin(client: Client, options: JoinOptions): Promise<void> {
-    const wallet = (options.wallet ?? "").trim() || `guest:${client.sessionId}`;
+    const rawWallet = (options.wallet ?? "").trim();
     const name = (options.name ?? "").trim().slice(0, 14) || "sailor";
 
-    const gate = await checkGate(this.gateCfg, (options.wallet ?? "").trim());
+    const gate = await checkGate(this.gateCfg, rawWallet);
     if (!gate.ok) throw new Error(gate.reason ?? "Access denied.");
+
+    // a connected wallet is the identity; only fall back to a guest id when the
+    // dev-open gate is active (local testing without a wallet extension)
+    const wallet = rawWallet || `guest:${client.sessionId}`;
+    this.repo.markSeen(wallet);
 
     let rec = await this.repo.load(wallet);
     let offline = 0;
@@ -167,6 +173,9 @@ export class HarborRoom extends Room<HarborState> {
     this.sendInventory(client, priv);
     this.sendEstate(client, priv);
     if (offline > 0) this.sendMsg(client, { t: "welcome_back", offlineEarned: offline });
+
+    this.state.online = this.state.players.size;
+    this.state.totalUsers = this.repo.totalUsers();
   }
 
   async onLeave(client: Client): Promise<void> {
@@ -176,6 +185,7 @@ export class HarborRoom extends Room<HarborState> {
       this.privates.delete(client.sessionId);
     }
     this.state.players.delete(client.sessionId);
+    this.state.online = this.state.players.size;
   }
 
   // ---- simulation ----

@@ -18,4 +18,6 @@ export class HarborState extends Schema {
   @type({ map: PlayerSchema }) players = new MapSchema<PlayerSchema>();
   @type({ map: "string" }) villaOwners = new MapSchema<string>(); // "x,y" -> name
   @type({ map: "string" }) berthOwners = new MapSchema<string>(); // berthId -> name
+  @type("number") online = 0;      // currently connected players
+  @type("number") totalUsers = 0;  // distinct wallets seen (this server session)
 }

@@ -75,6 +75,11 @@ export class NetClient {
     state.villaOwners.onRemove((_v: string, key: string) => this.scene.estate.villaOwners.delete(key));
     state.berthOwners.onAdd((name: string, key: string) => this.scene.estate.berthOwners.set(key, name));
     state.berthOwners.onRemove((_v: string, key: string) => this.scene.estate.berthOwners.delete(key));
+
+    this.scene.online = room.state.online ?? 0;
+    this.scene.totalUsers = room.state.totalUsers ?? 0;
+    state.listen("online", (v: number) => { this.scene.online = v; this.ui.hud(); });
+    state.listen("totalUsers", (v: number) => { this.scene.totalUsers = v; this.ui.hud(); });
   }
 
   private bindMessages(room: Room): void {

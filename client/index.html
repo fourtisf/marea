@@ -47,6 +47,7 @@
   .pill .val{font-family:Georgia,serif;font-size:15px;font-weight:600}
   .coin{width:13px;height:13px;border-radius:50%;background:linear-gradient(135deg,var(--gold-bright),var(--gold));
     border:1px solid #a9842f;box-shadow:inset 0 1px 1px rgba(255,255,255,.6);flex:0 0 auto}
+  .onlinedot{width:8px;height:8px;border-radius:50%;background:#37c46a;box-shadow:0 0 0 3px rgba(55,196,106,.22);flex:0 0 auto}
   .vol{cursor:pointer;border:none;background:none;padding:0;display:flex;align-items:center}
   .vol input[type=range]{width:56px;accent-color:var(--gold);margin-left:7px}
 
@@ -151,7 +152,15 @@
   .sbtn:hover{transform:translateY(-2px)}
   .sbtn svg{width:15px;height:15px;fill:currentColor;flex:0 0 auto}
   .sbtn.ca{background:linear-gradient(135deg,var(--gold-bright),var(--gold));color:#3a2c08;border-color:#a9842f}
-  .intro .err{margin-top:12px;font-size:12px;color:#b04a3a;min-height:16px}
+  .intro .err{margin-top:12px;font-size:13px;color:#b04a3a;min-height:16px;max-width:340px}
+  .intro .err a{color:#8a6a1e;font-weight:700}
+  .wallet-choose{display:none;flex-direction:column;gap:8px;margin-top:14px;width:268px}
+  .wallet-choose.show{display:flex}
+  .wallet-choose .wc-label{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:2px}
+  .wc-btn{display:flex;align-items:center;gap:11px;cursor:pointer;border:1px solid var(--line);background:var(--panel);
+    border-radius:12px;padding:11px 15px;font-family:inherit;font-size:14px;font-weight:600;color:var(--ink);box-shadow:0 6px 16px rgba(120,80,20,.16)}
+  .wc-btn:hover{background:#fff;transform:translateY(-1px)}
+  .wc-btn img{width:24px;height:24px;border-radius:6px;flex:0 0 auto}
   .intro.hide{opacity:0;pointer-events:none;transition:opacity .5s}
   .hint{position:absolute;left:18px;top:62px;z-index:5;font-size:11px;color:var(--ink-soft);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:7px 11px;max-width:210px;line-height:1.5}
 
@@ -173,6 +182,8 @@
   <div class="topbar">
     <div class="wordmark"><img class="brandmark" src="/brand/03-mark-transparent.svg" alt="Marea" /><span>Marea<small>Mediterranean harbor · golden hour</small></span></div>
     <div class="stats">
+      <div class="pill"><span class="onlinedot"></span><div class="lab">Online</div><div class="val" id="onlineVal">0</div></div>
+      <div class="pill"><div class="lab">Players</div><div class="val" id="usersVal">0</div></div>
       <div class="pill"><div class="coin"></div><div class="lab">Credits</div><div class="val" id="creditsVal">40</div></div>
       <div class="pill"><div class="lab">Net worth</div><div class="val" id="nwVal">40</div></div>
       <div class="pill"><div class="lab">Sailing</div><div class="val" id="vehVal" style="font-size:12px">Used Tender</div></div>
@@ -215,6 +226,7 @@
     <div class="pick-label">Choose your look</div>
     <div class="picker" id="lookPicker"></div>
     <button class="go" id="goBtn">Connect wallet &amp; enter</button>
+    <div class="wallet-choose" id="walletChoose"></div>
     <div class="err" id="introErr"></div>
     <div class="demo">balance gate — holds the minimum $RIV to enter</div>
     <div class="social">

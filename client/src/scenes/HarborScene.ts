@@ -88,6 +88,8 @@ export class HarborScene extends Phaser.Scene {
 
   // networked mode: the server owns position; we lerp toward its tweened values.
   networked = false;
+  online = 0;
+  totalUsers = 0;
   private serverTarget: { x: number; y: number } | null = null;
 
   readonly player: LocalPlayer = {
