@@ -132,6 +132,12 @@
   .intro .intro-mark{width:clamp(74px,12vw,104px);height:clamp(74px,12vw,104px);margin-bottom:8px;filter:drop-shadow(0 8px 20px rgba(120,80,20,.35))}
   .intro .ttl{font-family:Georgia,serif;font-size:clamp(40px,9vw,72px);letter-spacing:.28em;text-transform:uppercase;color:var(--ink);text-shadow:0 2px 0 rgba(255,255,255,.4)}
   .intro .ln{font-size:13px;color:var(--ink-soft);max-width:430px;margin:12px 18px 0;line-height:1.6}
+  .livecount{margin-top:16px;display:inline-flex;align-items:center;gap:9px;font-family:Inter,system-ui,sans-serif;font-size:12px;
+    font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);background:rgba(255,251,241,.8);
+    border:1px solid var(--line);border-radius:999px;padding:7px 16px;box-shadow:0 6px 16px rgba(120,80,20,.14)}
+  .livecount .dot{width:8px;height:8px;border-radius:50%;background:#37c46a;box-shadow:0 0 0 3px rgba(55,196,106,.22)}
+  .livecount b{color:var(--ink);font-family:Georgia,serif;font-size:14px}
+  .livecount .sep{opacity:.4}
   .intro input{margin-top:22px;border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:12px 16px;font-family:inherit;font-size:14px;color:var(--ink);text-align:center;width:230px;outline:none}
   .intro .go{margin-top:14px;cursor:pointer;border:none;font-family:Georgia,serif;font-size:14px;letter-spacing:.16em;text-transform:uppercase;color:#3a2c08;
     background:linear-gradient(135deg,var(--gold-bright),var(--gold));padding:13px 30px;border-radius:999px;border:1px solid #a9842f;box-shadow:0 12px 30px rgba(120,80,20,.3)}
@@ -222,6 +228,7 @@
     <img class="intro-mark" src="/brand/03-mark-transparent.svg" alt="Marea" />
     <div class="ttl">Marea</div>
     <div class="ln">A shared harbor at golden hour. Take honest marina work, surface rare finds, and rise — a boat, a berth, a villa on the hill the whole quay can see.</div>
+    <div class="livecount" id="liveCount"><span class="dot"></span><span><b id="lcOnline">0</b> online</span><span class="sep">·</span><span><b id="lcUsers">0</b> players</span></div>
     <input id="nameIn" maxlength="14" placeholder="Your name" />
     <div class="pick-label">Choose your look</div>
     <div class="picker" id="lookPicker"></div>

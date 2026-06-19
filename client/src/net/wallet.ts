@@ -21,6 +21,17 @@ export function getSolanaWallets(): DetectedWallet[] {
     .map((w) => ({ wallet: w, name: w.name, icon: w.icon }));
 }
 
+// Wallets register asynchronously after page load — keep a live list.
+export function subscribeWallets(cb: () => void): () => void {
+  const w = getWallets();
+  const off1 = w.on("register", cb);
+  const off2 = w.on("unregister", cb);
+  return () => {
+    off1();
+    off2();
+  };
+}
+
 // Connect a wallet and return its base58 public key.
 export async function connectWallet(wallet: Wallet): Promise<string> {
   const feature = wallet.features[StandardConnect] as StandardConnectFeature[typeof StandardConnect] | undefined;

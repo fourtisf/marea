@@ -17,9 +17,14 @@ import {
 } from "../db/repo.js";
 import { type GateConfig, loadGateConfig, checkGate } from "../solana/gate.js";
 
+interface PresenceStats {
+  online: number;
+  totalUsers: number;
+}
 interface RoomOptions {
   repo?: Repo;
   gateCfg?: GateConfig;
+  stats?: PresenceStats;
 }
 interface JoinOptions {
   name?: string;
@@ -34,12 +39,14 @@ export class HarborRoom extends Room<HarborState> {
   private privates = new Map<string, PrivatePlayer>();
   private repo: Repo = new MemoryRepo();
   private gateCfg: GateConfig = loadGateConfig(process.env);
+  private stats: PresenceStats | null = null;
   private leaderboardTimer = 0;
   private saveTimer = 0;
 
   onCreate(options: RoomOptions): void {
     if (options.repo) this.repo = options.repo;
     if (options.gateCfg) this.gateCfg = options.gateCfg;
+    if (options.stats) this.stats = options.stats;
     this.maxClients = 200; // one shared harbor
     this.setState(new HarborState());
     this.setSimulationInterval((dt) => this.tick(dt), 1000 / SERVER_TICK_HZ);
@@ -176,6 +183,10 @@ export class HarborRoom extends Room<HarborState> {
 
     this.state.online = this.state.players.size;
     this.state.totalUsers = this.repo.totalUsers();
+    if (this.stats) {
+      this.stats.online = this.state.online;
+      this.stats.totalUsers = this.state.totalUsers;
+    }
   }
 
   async onLeave(client: Client): Promise<void> {
@@ -186,6 +197,7 @@ export class HarborRoom extends Room<HarborState> {
     }
     this.state.players.delete(client.sessionId);
     this.state.online = this.state.players.size;
+    if (this.stats) this.stats.online = this.state.online;
   }
 
   // ---- simulation ----

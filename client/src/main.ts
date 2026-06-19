@@ -12,8 +12,28 @@ import { setupDealer } from "./ui/dealer";
 import { setupDock } from "./ui/dock";
 import { setupJoystick } from "./ui/joystick";
 import { toast, banner } from "./ui/notify";
-import { getSolanaWallets, connectWallet } from "./net/wallet";
+import { getSolanaWallets, connectWallet, subscribeWallets } from "./net/wallet";
 import type { Wallet } from "@wallet-standard/base";
+
+// Poll the server's /stats so the intro shows live Online/Players before joining.
+function setupLiveStats(): void {
+  const base = (import.meta.env.VITE_SERVER_URL as string | undefined)?.replace(/^ws/, "http") ?? "";
+  const url = base + "/stats";
+  const onEl = document.getElementById("lcOnline");
+  const usEl = document.getElementById("lcUsers");
+  const refresh = async () => {
+    try {
+      const r = await fetch(url, { cache: "no-store" });
+      const s = (await r.json()) as { online: number; totalUsers: number };
+      if (onEl) onEl.textContent = String(s.online ?? 0);
+      if (usEl) usEl.textContent = String(s.totalUsers ?? 0);
+    } catch {
+      /* ignore until reachable */
+    }
+  };
+  refresh();
+  setInterval(refresh, 5000);
+}
 
 const game = new Phaser.Game({
   type: Phaser.CANVAS,
@@ -75,6 +95,7 @@ game.events.once(Phaser.Core.Events.READY, () => {
   byId("zoomOut").onclick = () => scene.zoomBy(0.85);
 
   setupVolume();
+  setupLiveStats();
   setupIntro(net, chat);
 
   // CA pill — contract address coming soon
@@ -138,12 +159,19 @@ function setupIntro(net: NetClient, chat: { addLine: (from: string, text: string
 
   const walletChoose = byId("walletChoose");
 
+  // keep a live list of installed Solana wallets (they register asynchronously)
+  let wallets = getSolanaWallets();
+  subscribeWallets(() => {
+    wallets = getSolanaWallets();
+  });
+
   // connect a specific wallet, then enter the harbor with its public key
   const enterWith = async (wallet: Wallet, nm: string) => {
     goBtn.disabled = true;
     walletChoose.classList.remove("show");
     err.style.color = "var(--ink-soft)";
-    err.textContent = "Connecting wallet…";
+    err.textContent = `Connecting ${wallet.name}…`;
+    toast(`Approve the connection in ${wallet.name}`, "Connect Wallet", "Read-only · no transaction");
     try {
       const address = await connectWallet(wallet);
       err.textContent = "Entering the harbor…";
@@ -153,7 +181,9 @@ function setupIntro(net: NetClient, chat: { addLine: (from: string, text: string
       chat.addLine("system", `Welcome to Marea, ${nm.slice(0, 14)}.`);
     } catch (e) {
       err.style.color = "#b04a3a";
-      err.textContent = e instanceof Error ? e.message : "Wallet connection was cancelled.";
+      const msg = e instanceof Error ? e.message : "Wallet connection was cancelled.";
+      err.textContent = msg;
+      toast(msg, "Wallet", "");
       goBtn.disabled = false;
     }
   };
@@ -163,12 +193,15 @@ function setupIntro(net: NetClient, chat: { addLine: (from: string, text: string
     err.style.color = "#b04a3a";
     if (!nm) {
       err.textContent = "Enter a name to continue.";
+      toast("Enter a name to continue", "Marea", "");
+      nameIn.focus();
       return;
     }
-    const wallets = getSolanaWallets();
+    wallets = getSolanaWallets();
     if (wallets.length === 0) {
       err.innerHTML =
-        'No Solana wallet found. Install <a href="https://phantom.app" target="_blank" rel="noopener">Phantom</a>, Solflare or Backpack, then reload.';
+        'No Solana wallet detected. Install <a href="https://phantom.app" target="_blank" rel="noopener">Phantom</a>, Solflare or Backpack, then reload this page.';
+      toast("No Solana wallet detected", "Connect Wallet", "Install Phantom, then reload");
       return;
     }
     if (wallets.length === 1) {

@@ -11,9 +11,16 @@ import { loadGateConfig } from "./solana/gate.js";
 
 const PORT = Number(process.env.PORT ?? "2567");
 
+// live, server-wide presence counters (the room keeps these fresh)
+const stats = { online: 0, totalUsers: 0 };
+
 const app = express();
 app.get("/health", (_req, res) => {
   res.json({ ok: true, service: "marea", ts: Date.now() });
+});
+app.get("/stats", (_req, res) => {
+  res.set("Cache-Control", "no-store");
+  res.json(stats);
 });
 
 // Serve the built client (same-origin with the game server). In production the
@@ -40,7 +47,7 @@ const gameServer = new Server({
 const repo = new MemoryRepo();
 const gateCfg = loadGateConfig(process.env);
 
-gameServer.define("harbor", HarborRoom, { repo, gateCfg });
+gameServer.define("harbor", HarborRoom, { repo, gateCfg, stats });
 
 gameServer
   .listen(PORT)
