@@ -5,6 +5,10 @@ import { MAP, type Berth, type Prop } from "@marea/shared";
 
 const GRID = MAP.grid;
 const blocked = new Set<string>(MAP.props.map((p) => p.x + "," + p.y));
+// O(1) spatial indexes (props/berths never move) — linear scans here were
+// called for every neighbour every frame and showed up as input jank.
+const propIndex = new Map<string, Prop>(MAP.props.map((p) => [p.x + "," + p.y, p]));
+const berthIndex = new Map<string, Berth>(MAP.berths.map((b) => [b.x + "," + b.y, b]));
 
 export const inBounds = (x: number, y: number): boolean =>
   x >= 0 && y >= 0 && x < GRID && y < GRID;
@@ -19,10 +23,10 @@ export const waterAdjacent = (x: number, y: number): boolean =>
   ([[1, 0], [-1, 0], [0, 1], [0, -1]] as const).some(([dx, dy]) => isWater(x + dx, y + dy));
 
 export const propAt = (x: number, y: number): Prop | undefined =>
-  MAP.props.find((p) => p.x === x && p.y === y);
+  propIndex.get(x + "," + y);
 
 export const berthAt = (x: number, y: number): Berth | undefined =>
-  MAP.berths.find((b) => b.x === x && b.y === y);
+  berthIndex.get(x + "," + y);
 
 interface Bfs {
   prev: Record<string, [number, number] | undefined>;

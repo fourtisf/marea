@@ -87,6 +87,10 @@ export class HarborScene extends Phaser.Scene {
   private marker: { x: number; y: number; t: number } | null = null;
   private pointerDown = false;
   private dragTile: Tile | null = null;
+  // cached canvas offset — recomputed on resize, not on every mousemove (which
+  // forced a synchronous reflow and made the mouse feel sticky)
+  private canvasLeft = 0;
+  private canvasTop = 0;
 
   // networked mode: the server owns position; we lerp toward its tweened values.
   networked = false;
@@ -215,13 +219,21 @@ export class HarborScene extends Phaser.Scene {
   private get cssH() { return this.scale.height; }
 
   private toTile(clientX: number, clientY: number): Tile {
-    const canvas = this.game.canvas;
-    const r = canvas.getBoundingClientRect();
-    return screenToTile(clientX - r.left, clientY - r.top, this.cam, this.zoom, this.cssW, this.cssH);
+    return screenToTile(clientX - this.canvasLeft, clientY - this.canvasTop, this.cam, this.zoom, this.cssW, this.cssH);
   }
 
   private bindInput(): void {
     const canvas = this.game.canvas;
+
+    const updateRect = () => {
+      const r = canvas.getBoundingClientRect();
+      this.canvasLeft = r.left;
+      this.canvasTop = r.top;
+    };
+    updateRect();
+    window.addEventListener("resize", updateRect);
+    window.addEventListener("scroll", updateRect, true);
+    this.scale.on(Phaser.Scale.Events.RESIZE, updateRect);
 
     canvas.addEventListener("mousemove", (e) => {
       this.hover = this.toTile(e.clientX, e.clientY);

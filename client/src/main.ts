@@ -78,17 +78,23 @@ game.events.once(Phaser.Core.Events.READY, () => {
   setupDock(scene, net, () => dealer.open());
   setupJoystick(scene);
 
-  // HUD + work-bar refresh loop
+  // Per-frame loop: ONLY the things that genuinely change every frame (the work
+  // bar while working, the zoom label). The HUD is event-driven via ui.hud() on
+  // server messages — writing it every frame caused layout thrashing/jank.
+  let lastZoomPct = -1;
   const tick = () => {
-    updateHud(scene);
     const job = scene.player.job;
-    const work = byId("work");
     if (job) {
+      const work = byId("work");
       work.classList.add("show");
       byId("workTitle").textContent = "Working…";
       byId<HTMLElement>("workFill").style.width = Math.min(100, (job.t / job.dur) * 100) + "%";
     }
-    byId("zoomLbl").textContent = Math.round(scene.zoom * 100) + "%";
+    const pct = Math.round(scene.zoom * 100);
+    if (pct !== lastZoomPct) {
+      byId("zoomLbl").textContent = pct + "%";
+      lastZoomPct = pct;
+    }
     requestAnimationFrame(tick);
   };
   requestAnimationFrame(tick);
