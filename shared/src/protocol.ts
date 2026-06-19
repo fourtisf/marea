@@ -16,6 +16,7 @@ export type ClientMessage =
 
 export type LeaderboardRow = { name: string; netWorth: number };
 export type FindReward = { id: string; sell: number };
+export type QuestState = { id: string; progress: number };
 
 export type ServerMessage =
   | { t: "credits"; credits: number }                                       // owner only
@@ -23,6 +24,9 @@ export type ServerMessage =
   | { t: "estate"; villa: string | null; berths: string[] }                 // owner only
   | { t: "job_done"; payout: number; find: FindReward | null }              // owner only
   | { t: "welcome_back"; offlineEarned: number }                            // owner only
+  | { t: "progress"; xp: number; level: number; quests: QuestState[]; done: string[] } // owner only
+  | { t: "quest_done"; id: string; xp: number; credits: number }            // owner only
+  | { t: "level_up"; level: number }                                        // owner only
   | { t: "announce"; text: string }                                         // broadcast
   | { t: "leaderboard"; rows: LeaderboardRow[] }                            // broadcast
   | { t: "chat"; from: string; text: string }                              // broadcast

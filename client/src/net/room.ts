@@ -1,5 +1,5 @@
 import { Client, Room, getStateCallbacks } from "colyseus.js";
-import type { ClientMessage, LeaderboardRow, ServerMessage } from "@marea/shared";
+import { questById, type ClientMessage, type LeaderboardRow, type ServerMessage } from "@marea/shared";
 import type { HarborScene } from "../scenes/HarborScene";
 import { sfx } from "../ui/audio";
 
@@ -13,6 +13,7 @@ export interface UiBridge {
   leaderboard(rows: LeaderboardRow[]): void;
   error(msg: string): void;
   workHide(): void;
+  quests(): void;
 }
 
 // In dev, set VITE_SERVER_URL (client/.env.development → ws://localhost:2567).
@@ -117,6 +118,24 @@ export class NetClient {
     });
     on("welcome_back", (m) => {
       this.ui.toast(`+${m.offlineEarned.toLocaleString("en-US")} Credits`, "While you were away", "Your berths earned for you");
+    });
+    on("progress", (m) => {
+      this.scene.xp = m.xp;
+      this.scene.level = m.level;
+      this.scene.quests = m.quests;
+      this.scene.questsDone = m.done;
+      this.ui.hud();
+      this.ui.quests();
+    });
+    on("quest_done", (m) => {
+      const def = questById(m.id);
+      const reward = m.credits ? `+${m.xp} XP · +${m.credits} Credits` : `+${m.xp} XP`;
+      this.ui.toast(def?.label ?? "Quest complete", "Quest complete", reward);
+      sfx.rare();
+    });
+    on("level_up", (m) => {
+      this.ui.banner(`You reached <b>Level ${m.level}</b>`);
+      sfx.rare();
     });
     on("announce", (m) => this.ui.banner(m.text));
     on("leaderboard", (m) => this.ui.leaderboard(m.rows));

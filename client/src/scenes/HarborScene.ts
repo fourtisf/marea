@@ -6,6 +6,8 @@ import {
   STARTING_CREDITS,
   STARTING_LOOK,
   LOOKS,
+  stations,
+  dealer,
   type StationKind,
 } from "@marea/shared";
 import { cartToWorld, screenToTile, TILE_PX, type ScreenPoint, type Tile } from "../iso/iso";
@@ -90,6 +92,14 @@ export class HarborScene extends Phaser.Scene {
   networked = false;
   online = 0;
   totalUsers = 0;
+
+  // progression (mirrored from server "progress" messages)
+  xp = 0;
+  level = 1;
+  quests: { id: string; progress: number }[] = [];
+  questsDone: string[] = [];
+  // onboarding guide arrow: the kind of POI the current quest points at
+  objectiveKind: string | null = null;
   private serverTarget: { x: number; y: number } | null = null;
 
   readonly player: LocalPlayer = {
@@ -588,9 +598,66 @@ export class HarborScene extends Phaser.Scene {
     vg.addColorStop(1, "rgba(40,20,8,.26)");
     ctx.fillStyle = vg;
     ctx.fillRect(0, 0, W, H);
+
+    // onboarding guide arrow — points from the player toward the current
+    // objective POI (work station / dealer / berth) when it's still far off.
+    const tgt = this.objectiveTile();
+    if (tgt) {
+      const dtx = tgt.x - this.player.pos.x;
+      const dty = tgt.y - this.player.pos.y;
+      const distTiles = Math.hypot(dtx, dty);
+      if (distTiles > 3.5) {
+        const ang = Math.atan2(dty, dtx);
+        const rad = Math.min(W, H) * 0.16;
+        const ax = W / 2 + Math.cos(ang) * rad;
+        const ay = H / 2 + Math.sin(ang) * rad;
+        ctx.save();
+        ctx.translate(ax, ay);
+        ctx.rotate(ang);
+        ctx.fillStyle = "rgba(201,162,74,.95)";
+        ctx.strokeStyle = "#15323b";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(16, 0);
+        ctx.lineTo(-10, -10);
+        ctx.lineTo(-4, 0);
+        ctx.lineTo(-10, 10);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+        ctx.fillStyle = "rgba(19,52,60,.9)";
+        ctx.font = "bold 12px Inter, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(Math.round(distTiles) + "m", ax, ay - 16);
+        ctx.textAlign = "left";
+      }
+    }
   }
 
   private localVillaOwner(x: number, y: number): string | null {
     return this.player.villaOwned === x + "," + y ? this.player.name : null;
+  }
+
+  // The POI the onboarding guide arrow points to, from the current quest kind.
+  // Returns the nearest relevant landmark to the player, or null when idle.
+  objectiveTile(): { x: number; y: number } | null {
+    const p = this.player.pos;
+    const nearest = (list: readonly { x: number; y: number }[]) => {
+      let best: { x: number; y: number } | null = null;
+      let bd = Infinity;
+      for (const t of list) {
+        const d = (t.x - p.x) ** 2 + (t.y - p.y) ** 2;
+        if (d < bd) { bd = d; best = { x: t.x, y: t.y }; }
+      }
+      return best;
+    };
+    switch (this.objectiveKind) {
+      case "work": return nearest(stations());
+      case "sell":
+      case "buy_vehicle": { const d = dealer(); return d ? { x: d.x, y: d.y } : null; }
+      case "lease_berth": return nearest(MAP.berths);
+      default: return null;
+    }
   }
 }

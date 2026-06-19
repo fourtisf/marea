@@ -1,5 +1,16 @@
 import { Room, type Client } from "@colyseus/core";
-import { MAP, SERVER_TICK_HZ, STARTING_LOOK, lookById, type ClientMessage, type ServerMessage } from "@marea/shared";
+import {
+  MAP,
+  SERVER_TICK_HZ,
+  STARTING_LOOK,
+  XP_PER_JOB,
+  XP_PER_SELL,
+  XP_PER_BUY,
+  lookById,
+  type ClientMessage,
+  type ServerMessage,
+  type QuestKind,
+} from "@marea/shared";
 import { HarborState, PlayerSchema } from "../schema/HarborState.js";
 import type { PrivatePlayer } from "../types.js";
 import { requestMove, tickMovement } from "../systems/movement.js";
@@ -8,6 +19,7 @@ import { buyVehicle, equipVehicle, sellFind } from "../systems/dealer.js";
 import { buyVilla, leaseBerth, tickBerthIncome } from "../systems/estate.js";
 import { handleChat } from "../systems/chat.js";
 import { leaderboard } from "../systems/leaderboard.js";
+import { progress, progressSnapshot } from "../systems/progression.js";
 import {
   type Repo,
   type PersistedPlayer,
@@ -68,6 +80,7 @@ export class HarborRoom extends Room<HarborState> {
         if (r.ok) {
           this.sendCredits(c, priv);
           this.sendInventory(c, priv);
+          this.applyProgress(c, priv, "buy_vehicle", 1, XP_PER_BUY);
         } else this.sendMsg(c, { t: "error", message: r.error });
       });
     });
@@ -86,6 +99,7 @@ export class HarborRoom extends Room<HarborState> {
         if (r.ok) {
           this.sendCredits(c, priv);
           this.sendInventory(c, priv);
+          this.applyProgress(c, priv, "sell", 1, XP_PER_SELL);
         } else this.sendMsg(c, { t: "error", message: r.error });
       });
     });
@@ -106,6 +120,7 @@ export class HarborRoom extends Room<HarborState> {
         if (r.ok) {
           this.sendCredits(c, priv);
           this.sendEstate(c, priv);
+          this.applyProgress(c, priv, "lease_berth", 1, 0);
         } else this.sendMsg(c, { t: "error", message: r.error });
       });
     });
@@ -152,6 +167,9 @@ export class HarborRoom extends Room<HarborState> {
       finds: [...rec.finds],
       villa: rec.villa,
       berths: [...rec.berths],
+      xp: rec.xp ?? 0,
+      quests: { ...(rec.quests ?? {}) },
+      questsDone: [...(rec.questsDone ?? [])],
       path: [],
       job: null,
       berthFraction: 0,
@@ -178,6 +196,7 @@ export class HarborRoom extends Room<HarborState> {
     this.sendCredits(client, priv);
     this.sendInventory(client, priv);
     this.sendEstate(client, priv);
+    this.sendMsg(client, { t: "progress", ...progressSnapshot(priv) });
     if (offline > 0) this.sendMsg(client, { t: "welcome_back", offlineEarned: offline });
 
     this.state.online = this.state.players.size;
@@ -214,6 +233,7 @@ export class HarborRoom extends Room<HarborState> {
           this.sendMsg(client, { t: "job_done", payout: completion.payout, find: completion.find });
           this.sendCredits(client, priv);
           this.sendInventory(client, priv);
+          this.applyProgress(client, priv, "work", 1, XP_PER_JOB);
         }
         if (completion.find && completion.rare) {
           const f = completion.find;
@@ -277,6 +297,17 @@ export class HarborRoom extends Room<HarborState> {
     this.sendMsg(client, { t: "estate", villa: priv.villa, berths: [...priv.berths] });
   }
 
+  // Advance quests/xp for an action, fire reward toasts, then resync progress.
+  private applyProgress(client: Client, priv: PrivatePlayer, kind: QuestKind, n: number, baseXp: number): void {
+    const out = progress(priv, kind, n, baseXp);
+    for (const qc of out.questsCompleted) {
+      this.sendMsg(client, { t: "quest_done", id: qc.id, xp: qc.xp, credits: qc.credits });
+    }
+    if (out.newLevel) this.sendMsg(client, { t: "level_up", level: out.newLevel });
+    if (out.questsCompleted.length) this.sendCredits(client, priv); // quest credit rewards
+    this.sendMsg(client, { t: "progress", ...progressSnapshot(priv) });
+  }
+
   private toPersisted(priv: PrivatePlayer): PersistedPlayer {
     return {
       wallet: priv.wallet,
@@ -288,6 +319,9 @@ export class HarborRoom extends Room<HarborState> {
       finds: [...priv.finds],
       villa: priv.villa,
       berths: [...priv.berths],
+      xp: priv.xp,
+      quests: { ...priv.quests },
+      questsDone: [...priv.questsDone],
       lastSeen: Date.now(),
     };
   }

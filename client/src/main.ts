@@ -8,6 +8,7 @@ import { ensureAudio, setVolume, setMuted, isMuted } from "./ui/audio";
 import { NetClient, type UiBridge } from "./net/room";
 import { setupChat } from "./ui/chat";
 import { setupLeaderboard } from "./ui/leaderboard";
+import { setupQuests } from "./ui/quests";
 import { setupDealer } from "./ui/dealer";
 import { setupDock } from "./ui/dock";
 import { setupJoystick } from "./ui/joystick";
@@ -60,6 +61,7 @@ game.events.once(Phaser.Core.Events.READY, () => {
   const dealer = setupDealer(scene, net);
   const chat = setupChat(net);
   const lead = setupLeaderboard(scene);
+  const questsUi = setupQuests(scene);
 
   const ui: UiBridge = {
     hud: () => updateHud(scene),
@@ -70,6 +72,7 @@ game.events.once(Phaser.Core.Events.READY, () => {
     leaderboard: (rows) => lead.render(rows),
     error: (msg) => toast(msg, "Harbor", ""),
     workHide: () => byId("work").classList.remove("show"),
+    quests: () => questsUi.render(),
   };
   net.setUi(ui);
   setupDock(scene, net, () => dealer.open());

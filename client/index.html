@@ -179,6 +179,32 @@
     background:linear-gradient(135deg,var(--gold-bright),var(--gold));border:1px solid #a9842f;
     box-shadow:0 4px 14px rgba(120,80,20,.4),inset 0 1px 2px rgba(255,255,255,.6);transition:transform .04s ease-out}
   @media (max-width:560px){.joy-base{right:18px;bottom:120px;width:116px;height:116px}}
+
+  /* level + XP bar */
+  .pill.lvl{flex-direction:column;align-items:flex-start;gap:3px;min-width:78px}
+  .pill.lvl .lab{color:var(--ink);font-weight:700}
+  .pill.lvl .lab b{font-family:Georgia,serif}
+  .xpbar{width:100%;height:5px;border-radius:99px;background:rgba(19,52,60,.14);overflow:hidden}
+  .xpfill{height:100%;width:0;background:linear-gradient(90deg,var(--gold),var(--gold-bright));transition:width .35s}
+  /* quests button badge + panel */
+  #questsBtn{position:relative}
+  .qbadge{position:absolute;top:-6px;right:-6px;min-width:17px;height:17px;border-radius:99px;background:#b04a3a;color:#fff;
+    font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 4px;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+  .quests{position:absolute;left:18px;top:232px;z-index:7;width:270px;background:var(--panel);border:1px solid var(--line);
+    border-radius:16px;padding:14px 16px;box-shadow:0 14px 40px rgba(120,80,20,.22);display:none}
+  .quests.show{display:block;animation:rise .2s ease}
+  .quests .qhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+  .quests h3{margin:0;font-family:Georgia,serif;font-size:15px;color:var(--ink)}
+  .closeX2{border:none;background:none;font-size:20px;line-height:1;cursor:pointer;color:var(--ink-soft)}
+  .quest{padding:9px 0;border-top:1px solid var(--line)}
+  .quest:first-child{border-top:none}
+  .quest.cur .q-top span{font-weight:700;color:var(--ink)}
+  .q-top{display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink-soft);gap:8px}
+  .q-top b{color:var(--ink);font-family:Georgia,serif}
+  .q-track{height:6px;border-radius:99px;background:rgba(19,52,60,.12);overflow:hidden;margin:6px 0 4px}
+  .q-fill{height:100%;width:0;background:linear-gradient(90deg,var(--teal),#46c7da);transition:width .35s}
+  .q-reward{font-size:10.5px;letter-spacing:.04em;color:#8a6a1e;text-transform:uppercase}
+  .q-empty{font-size:13px;color:var(--ink-soft);line-height:1.5}
 </style>
 </head>
 <body>
@@ -192,7 +218,9 @@
       <div class="pill"><div class="lab">Players</div><div class="val" id="usersVal">0</div></div>
       <div class="pill"><div class="coin"></div><div class="lab">Credits</div><div class="val" id="creditsVal">40</div></div>
       <div class="pill"><div class="lab">Net worth</div><div class="val" id="nwVal">40</div></div>
+      <div class="pill lvl"><div class="lab">Lv <b id="lvlVal">1</b></div><div class="xpbar"><div class="xpfill" id="xpFill"></div></div></div>
       <div class="pill"><div class="lab">Sailing</div><div class="val" id="vehVal" style="font-size:12px">Used Tender</div></div>
+      <div class="pill btn2" id="questsBtn"><div class="lab">Quests</div><span class="qbadge" id="questsBadge">0</span></div>
       <div class="pill btn2" id="leadBtn"><div class="lab">Leaderboard</div></div>
       <a class="pill link2" href="https://x.com/playmarea" target="_blank" rel="noopener" title="Follow on X" aria-label="X"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.9 2H22l-7.6 8.7L23 22h-6.9l-5.4-7-6.2 7H1.4l8.1-9.3L1 2h7l4.9 6.4L18.9 2Zm-1.2 18h1.9L7.4 4H5.4l12.3 16Z"/></svg></a>
       <a class="pill link2" href="https://t.me/playmarea" target="_blank" rel="noopener" title="Telegram" aria-label="Telegram"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.9 4.3 18.7 19.4c-.2 1-.9 1.3-1.8.8l-4.9-3.6-2.4 2.3c-.3.3-.5.5-1 .5l.3-5 9.1-8.2c.4-.4-.1-.6-.6-.2L6.4 13.2l-4.8-1.5c-1-.3-1-1 .2-1.5l18.7-7.2c.9-.3 1.6.2 1.4 1.3Z"/></svg></a>
@@ -204,6 +232,10 @@
 
   <div class="mini"><canvas id="mini" width="144" height="144"></canvas></div>
   <div class="lead" id="lead"><h3>Richest in the harbor</h3><div id="leadList"></div></div>
+  <div class="quests" id="quests">
+    <div class="qhead"><h3>Quests</h3><button class="closeX2" id="questsClose">×</button></div>
+    <div id="questList"></div>
+  </div>
 
   <div class="dock" id="dock"></div>
   <div class="work" id="work"><div class="title" id="workTitle">Working…</div><div class="track"><div class="fill" id="workFill"></div></div></div>

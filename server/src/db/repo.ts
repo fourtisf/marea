@@ -17,6 +17,9 @@ export interface PersistedPlayer {
   finds: string[];
   villa: string | null;
   berths: string[];
+  xp: number;
+  quests: Record<string, number>;
+  questsDone: string[];
   lastSeen: number; // epoch ms
 }
 
@@ -64,6 +67,9 @@ export function freshPlayer(wallet: string, name: string): PersistedPlayer {
     finds: [],
     villa: null,
     berths: [],
+    xp: 0,
+    quests: {},
+    questsDone: [],
     lastSeen: Date.now(),
   };
 }

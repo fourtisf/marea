@@ -43,7 +43,16 @@ export function setupMinimap(scene: HarborScene): void {
       } else if (p.kind === "station") {
         mctx.fillStyle = STATION_COLOR[p.station as StationKind];
         mctx.fillRect(p.x * MS, p.y * MS, 3, 3);
+      } else if (p.kind === "villa" && p.forSale) {
+        mctx.fillStyle = "#e7c46b"; // for-sale villa
+        mctx.fillRect(p.x * MS - 1, p.y * MS - 1, 3, 3);
       }
+    }
+    // your leased berths
+    mctx.fillStyle = "#1fa4bd";
+    for (const id of scene.player.berths) {
+      const b = MAP.berths.find((x) => x.id === id);
+      if (b) mctx.fillRect(b.x * MS, b.y * MS, 2.6, 2.6);
     }
     mctx.fillStyle = "rgba(120,120,130,.9)";
     for (const r of scene.remotePlayers.values()) mctx.fillRect(r.pos.x * MS, r.pos.y * MS, 2.4, 2.4);

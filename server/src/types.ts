@@ -17,6 +17,11 @@ export interface PrivatePlayer {
   villa: string | null; // "x,y" or null
   berths: string[]; // berth ids
 
+  // progression (owner-only): total xp, per-quest progress, completed quest ids
+  xp: number;
+  quests: Record<string, number>;
+  questsDone: string[];
+
   // movement (cartesian path the player is walking)
   path: GridPoint[];
 
